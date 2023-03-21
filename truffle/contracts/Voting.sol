@@ -119,7 +119,7 @@ contract Voting {
     }
 
     function _validateVoterId(string memory _vid) internal view returns (bool) {
-        if(keccak256(bytes(this._getSlice(0,2,_vid))) == keccak256(bytes("vtr"))) {
+        if(keccak256(bytes(this._getSlice(0,2,_vid))) == keccak256(bytes("vt    r"))) {
             return true;
         }
         return false;
