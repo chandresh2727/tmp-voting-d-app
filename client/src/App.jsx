@@ -1,4 +1,4 @@
-import Home from "./components/Home/Home";
+import CreatePoll from "./components/Home/CreatePoll";
 import { EthProvider } from "./contexts/EthContext";
 // import Intro from "./components/Intro/";
 // import Setup from "./components/Setup";
@@ -6,11 +6,12 @@ import { EthProvider } from "./contexts/EthContext";
 // import Footer from "./components/Footer";
 
 function App() {
+  
   return (
     <EthProvider>
       <div id="App">
         <div className="container">
-          <Home/>
+          <CreatePoll/>
           {/* <Intro />
           <hr />
           <Setup />

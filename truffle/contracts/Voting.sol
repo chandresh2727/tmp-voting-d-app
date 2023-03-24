@@ -25,14 +25,15 @@ contract Voting {
     }
 
     struct Option {
-        string optionId;
-        string optionName;
-        address optionAddress; // default 0x000 | walletAdress of the Candidate
-        string imageUrl;
-        uint stakeAmount;
-        address tokenAddress;
+        string optionId; // opt prefix with random string
+        string optionName; // gifu
+        bool isUser; // gifu get it from user andif user
+        address optionAddress; // gifu if user is true thn ; default 0x000 | walletAdress of the Candidate
+        string imageUrl; // gifu if true store the url else store "N/A"
+        uint stakeAmount; // gifu and if poll type is metered else 0.0
+        address tokenAddress; // gifu and if poll type is metered else 0x0000
         uint votePrice; // 1 vote will cost 5 rights??
-        string optionMessage; // just for bystand; the political party's message
+        string optionMessage; // gifu just for bystand; the political party's message
         string hostId; // the hostId of the poll Host
     }
 
@@ -48,6 +49,8 @@ contract Voting {
         PUBLIC, PRIVATE, METERED
     }
 
+    // PollType public pollType;
+
     enum PollStatus{
         DRAFT, LIVE, CONDUCTED, DISCARDED
     }
@@ -60,20 +63,36 @@ contract Voting {
         PollStatus pollStatus;
         string hostId;
         address walletAddress;
+        address[] addressList;
         address tokenContractAddress;
         uint tokenAmount;
+        string[] options;
+    }
+
+    struct PollTime {
+        string pollId;
         bool customStartDate;
         bool customEndDate;
         uint pollStartDate;
         uint pollEndDate;
     }
 
-    User[] users;
-    Poll[] polls;
-    Rights[] rights;
-    Option[] options;
+    struct Person {
+        string pollId;
+    }
 
-    function findIdByAddress(address _user) private view returns(UserId memory) {
+    User[] public users;
+    Poll[] internal polls;
+    PollTime[] internal  pollTimes;
+    Rights[] public rights;
+Person[] persons;
+    Option[] public options;
+
+    // utils variables start
+    uint counter =1;
+    //utils variables end
+
+    function findIdByAddress(address _user) public view returns(UserId memory) {
         for(uint8 i = 0; i < users.length; i++) {
             if (users[i].walletAddress == _user) {
                 return UserId(users[i].hostId, users[i].voterId, true);
@@ -82,7 +101,7 @@ contract Voting {
         return UserId("null", "null", false);
     }
 
-    function _checkUsersExistence(address _user) private view returns(bool) {
+    function _checkUsersExistence(address _user) public view returns(bool) {
         for(uint8 i = 0; i < users.length; i++) {
             if (users[i].walletAddress == _user) {
                 return true;
@@ -119,39 +138,111 @@ contract Voting {
     }
 
     function _validateVoterId(string memory _vid) internal view returns (bool) {
-        if(keccak256(bytes(this._getSlice(0,2,_vid))) == keccak256(bytes("vt    r"))) {
+        if(keccak256(bytes(this._getSlice(0,2,_vid))) == keccak256(bytes("vtr"))) {
             return true;
         }
         return false;
     }
 
-    function _createUser(address _user) private returns(bool) {
-        string memory _hostId = string(abi.encodePacked("hst", keccak256(abi.encodePacked("host id",block.timestamp))));
-        string memory _voterId = string(abi.encodePacked("vtr", keccak256(abi.encodePacked("voter id",block.timestamp))));
 
+       function _random(uint number) public  returns(uint){
+        counter++;
+        return uint(keccak256(abi.encodePacked(block.timestamp,block.prevrandao,msg.sender,counter))) % number;
+    }
+    
+    function _randomString(uint size)  public returns(string memory){
+        bytes memory randomWord=new bytes(size);
+        // since we have 26 letters
+        bytes memory chars = new bytes(36);
+        chars="abcdefghijklmnopqrstuvwxyz0123456789";
+        for (uint i=0;i<size;i++){
+            uint randomNumber=_random(36);
+            randomWord[i]=chars[randomNumber];
+        }
+        return string(randomWord);
+    }
+
+    function _generateId(string memory _prefix) public returns(string memory) {
+        return string(abi.encodePacked(_prefix,_randomString(13)));
+    }
+
+
+    function _createUser(address _user) public returns(bool) {
+        string memory _hostId = _generateId("hst");
+        string memory _voterId = _generateId("vtr");
         string[] memory placeholderArr;
         hostIdMap[_hostId] = _user;
         voterIdMap[_voterId] = _user;
         users.push(User(_user, _hostId, _voterId, placeholderArr, placeholderArr));
         return true;
     }
+Poll[] pollList;
+PollTime[]  pollTimeList;
+
 
 
 // function createPoll(string memory _pollName, string memory _pollDescription,string memory _pollType, address _tokenAddr, uint _tokenAmount, bool _customStartDate, bool _customEndDate, uint _pollStartDate, uint _pollEndDate, address _user, uint _nonce, uint8 _v, bytes32 _r, bytes32 _s) public returns(bool) {
-    function createPoll(Poll memory poll, address _user, uint _nonce, uint8 _v, bytes32 _r, bytes32 _s) public returns(bool) {
+    function createPoll(Poll memory poll, PollTime memory pollTime , address _user, uint _nonce, bytes32 _hash, bytes memory _signature) public returns(Poll[] memory, PollTime[] memory) {
         if (!_checkUsersExistence(_user)) {_createUser(_user);}
         require(_checkUsersExistence(_user), "User does not exist");
+        
         // PollType pollType;
         // if (keccak256(bytes(_pollType)) == keccak256(bytes("METERED"))) {pollType = PollType.METERED;}
         // else if (keccak256(bytes(_pollType)) == keccak256(bytes("PRIVATE"))) {pollType = PollType.PRIVATE;}
         // else {pollType = PollType.PUBLIC;}
-        poll.pollId = string(abi.encodePacked("pid", keccak256(abi.encodePacked("p lid",block.timestamp))));
+        poll.pollId = _generateId("pid");
+        pollTime.pollId = poll.pollId;
         poll.hostId = findIdByAddress(_user).hostId;
+        string[] memory option;
+        poll.options = option;
+        address defAddr = 0x0000000000000000000000000000000000000000;
+        if (poll.tokenAmount != 0) {
+            poll.pollType = PollType.METERED;
+        }  else if (poll.addressList[0] == defAddr){
+             poll.pollType = PollType.PRIVATE;
+        } else {
+              poll.pollType = PollType.PUBLIC;
+        }
+       persons.push(Person(poll.pollId));
+        pollList.push(Poll(poll.pollId, poll.pollName, poll.pollDescription, poll.pollType, PollStatus.DRAFT, poll.hostId, poll.walletAddress, poll.addressList, poll.tokenContractAddress, poll.tokenAmount, poll.options));
+        
+        pollTimeList.push(PollTime(pollTime.pollId, pollTime.customStartDate, pollTime.customEndDate, pollTime.pollStartDate, pollTime.pollEndDate) );
         // polls.push(Poll(_pollId, _pollName, _pollDescription, pollType, PollStatus.DRAFT, hostId, _user, _tokenAddr, _tokenAmount, _customStartDate, _customEndDate, _pollStartDate, _pollEndDate));
-        polls.push(poll);
-        return true;
+        polls.push(pollList[0]);
+        pollTimes.push(pollTimeList[0]);
+        pollList.pop();
+        pollTimeList.pop();
+        return (polls, pollTimes);
     }
 
+    function viewPoll() public view returns (Poll[] memory, PollTime[] memory, Person[] memory) {
+        return (polls, pollTimes, persons);
+    }
+
+    function createPoll2() public pure returns(string memory) {
+        return "hello from createPoll2";
+    }
+
+    // function update() public returns(string memory _optionId, string memory _optionName, bool _isUser, address _optionAddress, string memory _imageUrl, uint _stakeAmount, address _tokenAddress, string memory _optionMessage) {
+    //     _optionId = (string)(abi.encodePacked("opt", keccak256(abi.encodePacked("",block.timestamp))));
+    //     for(uint8 j = 0; j < options.length; j++) {
+    //         if (Option[j].optionName == _optionName) {
+    //             Option[j].optionName = _optionName;
+    //         }
+    //     }
+
+    //     for(uint8 i = 0;i < options.length;i++){
+    //     if(options[i].isUser == true) {
+    //         Option[i].isUser = _isUser;
+    //     }
+
+    //     require(options.optionAddress = _optionAddress, "0X00000",msg.sender);
+
+    //     require(pollType.metered,_stakeAmount,"0.00");
+
+    //     require(pollType.metered,_tokenAddress,"0.00");
+
+    //     options.voterPrice = (1 ETH;
 
 
-}
+    }

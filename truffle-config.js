@@ -1,3 +1,8 @@
+require('dotenv').config();
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+const privateKey = process.env.PRIVATE_KEY;
+const infura_api_key = process.env.INFURA_API_KEY;
+const etherscan_api_key = process.env.ETHERSCAN_API_KEY;
 /**
  * Use this file to configure your truffle project. It's seeded with some
  * common settings for different networks and features like migrations,
@@ -56,7 +61,9 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-
+  api_keys: {
+    etherscan: etherscan_api_key
+  },
   networks: {
     // Useful for testing. The `development` name is special - truffle uses it by default
     // if it's defined here and no other network is specified at the command line.
@@ -64,11 +71,20 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    development: {
-     host: "127.0.0.1",     // Localhost (default: none)
-     port: 7545,            // Standard Ethereum port (default: none)
-     network_id: "5777",       // Any network (default: none)
-    },
+    // ganache
+    ganache: {
+      host: "127.0.0.1",     // Localhost (default: none)
+      port: 7545,            // Standard Ethereum port (default: none)
+      network_id: "5777",       // Any network (default: none)
+     },
+    sepolia: {
+      provider: () => new HDWalletProvider(privateKey, `https://sepolia.infura.io/v3/${infura_api_key}`),
+      network_id: 11155111, //Goerli's id
+      gas: 5000000, //gas limit
+      confirmations: 1,    // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+     },
     
     // An additional network, but with some advanced options…
     // advanced: {
@@ -108,13 +124,14 @@ module.exports = {
     solc: {
       version: "0.8.19",      // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
-      // settings: {          // See the solidity docs for advice about optimization and evmVersion
-      //  optimizer: {
-      //    enabled: false,
-      //    runs: 200
-      //  },
-      //  evmVersion: "byzantium"
-      // }
+      settings: {    
+        viaIR: true,      // See the solidity docs for advice about optimization and evmVersion
+       optimizer: {
+         enabled: false,
+         runs: 200
+       },
+       evmVersion: "byzantium"
+      }
     }
   },
 

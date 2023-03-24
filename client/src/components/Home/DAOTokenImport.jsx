@@ -13,7 +13,7 @@ const DAOTokenImport = () => {
 
         <Form.Group className="mb-3" controlId="tokenAmount">
             <Form.Label>Token Amount</Form.Label>
-            <Form.Control name="tokenAddress" type="number" placeholder="i.e 0.43" required/>
+            <Form.Control name="tokenAmount" type="number" placeholder="i.e 0.43" required/>
         </Form.Group>
     </div>
   );

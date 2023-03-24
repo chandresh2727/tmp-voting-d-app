@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import useEth from "../../contexts/EthContext/useEth";
+import Web3 from "web3";
 import Form from "react-bootstrap/Form";
 import "./Home.css";
 import AddressImport from "./AddressImport";
 import DAOTokenImport from "./DAOTokenImport";
-import {excelIterator} from '../../Handlers/excelIterator'
-import { jsonIterator } from "../../Handlers/jsonIterator";
-import { textAreaIterator } from "../../Handlers/textAreaIterator";
+import {textAreaIterator, excelIterator, jsonIterator} from '../../Handlers/iteratorHandler'
+import React, { useReducer, useCallback } from "react";
+// var ethers = require('ethers');
 
-const Home = () => {
+
+const CreatePoll = () => {
+  const web3 = new Web3( Web3.givenProvider || "ws://localhost:8545");
   const [pType, setPType] = useState(0);
   const [customStartDate, setCustomStartDate] = useState(false);
   const [startDate, setStartDate] = useState({
@@ -22,9 +25,10 @@ const Home = () => {
     utcdate: "",
     epoch: 0,
   });
-  useEffect(() => {
+  const {
+    state: { accounts, contract, artifact },
+} = useEth();
 
-  })
   const pollCreateHandle = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target),
@@ -36,6 +40,7 @@ const Home = () => {
       formDataObj.startDateEpoch = startDate.epoch
       // current time + 30 min in milliseconds 
       if (((Date.now() + 1800000) > (formDataObj.startDateEpoch * 1000))) {
+        console.log(formDataObj)
         return alert("Start date should atleast be 30 Minutes in Future")
       }
     }
@@ -79,14 +84,89 @@ const Home = () => {
       let _excelFileTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', '.csv']
       if (_excelFileTypes.includes(formDataObj.addressListFile.type)) excelIterator(formDataObj.addressListFile, iteratorResHandler)
       else jsonIterator(formDataObj.addressListFile, iteratorResHandler)
+      delete formDataObj['addressListFile']
     } else if (formDataObj.addressList && !formDataObj.addressListFile) {
       textAreaIterator(formDataObj.addressList, textAreaIteratorHandler)
     }
 
+    let nonce = await web3.eth.getTransactionCount(accounts[0])
+    let signature = await web3.eth.personal.sign(JSON.stringify(formDataObj), accounts[0])
+    let hash = web3.utils.sha3(signature)
+    let poll = {
+      "pollId": "abc",
+      "pollName": formDataObj.pollName,
+      "pollDescription": formDataObj.pollDescription,
+      "pollType": 0,
+      "pollStatus": 0,
+      "hostId": "hst",
+      "walletAddress": accounts[0],
+      "addressList": ["0x0000000000000000000000000000000000000000"],
+      "tokenContractAddress":  "0x0000000000000000000000000000000000000000",
+      "tokenAmount": 0,
+      "options": ["tmp"],
+    }
+
+    let pollTime = {
+      "pollId": "abc",
+      "customStartDate": false,
+      "customEndDate": false,
+      "pollStartDate": 0,
+      "pollEndDate": 0,
+    }
+
+    console.log(typeof(accounts[0]))
+
+    if (formDataObj.pollType === 1) {
+      alert("type 1")
+      poll.addressList = formDataObj.addressList
+    }
+
+    if (formDataObj.pollType === 2) {
+      alert("type 2")
+      poll.addressList = formDataObj.addressList
+      poll.tokenContractAddress = formDataObj.tokenAddress
+      poll.tokenAmount = formDataObj.tokenAmount
+    }
+
+    if (customStartDate) {
+      pollTime.customStartDate = true
+      pollTime.pollStartDate = formDataObj.startDateEpoch
+    }
+
+    if (customEndDate) {
+      pollTime.customEndDate = true
+      pollTime.pollEndDate = formDataObj.endDateEpoch
+    }
+
+    console.log("signature" + signature)
+    console.log("hash" + hash)
+    // address[] must always contain string of address
+    // address (single instance) can either be string  or plain
+    // struct parameters should be passed using [] as tuples
+    // enum should be sent as an integer or big number
 
 
+    // convert obj values to array
+    let _poll = Object.keys(poll).map((key) => poll[key])
+    let _pollTime = Object.keys(pollTime).map((key) => pollTime[key])
 
-    console.log(formDataObj)
+console.log(_poll , accounts[0], nonce, hash, signature)
+const value1 = await contract.methods.viewPoll().call({from: accounts[0]})
+console.log(value1)
+    const value = await contract.methods.createPoll(_poll, _pollTime, accounts[0], nonce, hash, signature ).call({from: accounts[0]})
+    const value2 = await contract.methods.viewPoll().call({from: accounts[0]})
+console.log(value2)
+    // const provider = new ethers.BrowserProvider(window.ethereum)
+    // const signer = provider.getSigner()
+    // const signature = (await signer).signMessage(formDataObj)
+    // var params = [accounts[0], formDataObj];
+    // var method = 'eth_signTypedData_v4';
+    // const value2 = await web3.eth.signTransaction()
+    // console.log(a)
+
+
+    console.log(value)
+    // console.log()
     // write validators
     // 1. Validator for End Date should be greater Than Start Date - done
     // 2. File is a single file - done by not mentioning multiple and the validor will automatically select one file if multiple is selected
@@ -134,7 +214,7 @@ iii)Public - Anyone can vote just by connecting their account"
 
       <Form.Group className="mb-3">
         <Form.Label>Poll Staus</Form.Label>
-        <Form.Select disabled>
+        <Form.Select name="pollStatus" disabled>
           <option value={0}>DRAFT</option>
         </Form.Select>
       </Form.Group>
@@ -222,4 +302,4 @@ iii)Public - Anyone can vote just by connecting their account"
   );
 };
 
-export default Home;
+export default CreatePoll;

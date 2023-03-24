@@ -1,6 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const EslintWebpackPlugin = require("eslint-webpack-plugin");
+// const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
 
 const extensions = [".js", ".jsx"];
 
@@ -38,6 +39,7 @@ module.exports = {
   },
   plugins: [
     new EslintWebpackPlugin({ extensions }),
+    // new NodePolyfillPlugin(),
     new HtmlWebpackPlugin({
       template: "./public/index.html",
       favicon: "./public/favicon.ico",
