@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 // var ethers = require('ethers');
 
+
 export const CreatePoll = () => {
 	const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");
 	const [pType, setPType] = useState(0);
@@ -37,8 +38,9 @@ export const CreatePoll = () => {
 
 	const pollCreateHandle = async (e) => {
 		e.preventDefault();
-		const formData = new FormData(e.target),
-			formDataObj = Object.fromEntries(formData.entries());
+		const formData = new FormData(e.target)
+		
+		const formDataObj = Object.fromEntries(formData.entries());
 
 		// if the poll has the start date
 		if (formDataObj.startDate) {
@@ -46,7 +48,6 @@ export const CreatePoll = () => {
 			formDataObj.startDateEpoch = startDate.epoch;
 			// current time + 30 min in milliseconds
 			if (Date.now() + 1800000 > formDataObj.startDateEpoch * 1000) {
-				console.log(formDataObj);
 				return alert(
 					"Start date should atleast be 30 Minutes in Future"
 				);
@@ -136,16 +137,11 @@ export const CreatePoll = () => {
 
 		let nonce = await web3.eth.getTransactionCount(accounts[0]);
 
-
-		window.alert(typeof formDataObj.pollType);
-
 		if (formDataObj.pollType === "1") {
-			alert("type 1");
 			poll.addressList = formDataObj.addressList;
 		}
 
 		if (formDataObj.pollType === "2") {
-			alert("type 2");
 			poll.addressList = formDataObj.addressList;
 			poll.tokenContractAddress = formDataObj.tokenAddress;
 			poll.tokenAmount = formDataObj.tokenAmount;
@@ -160,7 +156,6 @@ export const CreatePoll = () => {
 			pollTime.customEndDate = true;
 			pollTime.pollEndDate = endDate.epoch;
 		}
-		alert(pollTime.pollStartDate )
 
 		let hash = web3.utils.sha3(JSON.stringify(poll));
 		let signature = await web3.eth.personal.sign(hash, accounts[0]);
@@ -275,14 +270,12 @@ iii)Public - Anyone can vote just by connecting their account">
 					<Form.Check
 						type="datetime-local"
 						id="startDate"
+						min={new Date().toISOString().slice(0, -8)}
 						name="startDate"
 						onChange={(date) => {
 							const selectedDate = new Date(date.target.value);
 							const utcString = selectedDate.toUTCString();
 							const localString = selectedDate.toLocaleString();
-							alert((selectedDate.getTime() -
-							selectedDate.getMilliseconds()) /
-						1000)
 							setStartDate({
 								localdate: localString,
 								utcdate: utcString,
@@ -291,7 +284,6 @@ iii)Public - Anyone can vote just by connecting their account">
 										selectedDate.getMilliseconds()) /
 									1000,
 							});
-							//   alert(utcString);
 						}}
 						label={startDate.localdate}
 						required
@@ -315,6 +307,7 @@ iii)Public - Anyone can vote just by connecting their account">
 					<Form.Check
 						type="datetime-local"
 						id="endDate"
+						min={new Date().toISOString().slice(0, -8)}
 						name="endDate"
 						onChange={(date) => {
 							const selectedDate = new Date(date.target.value);
