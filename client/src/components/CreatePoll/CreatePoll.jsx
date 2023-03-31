@@ -14,7 +14,10 @@ import {
 import { useNavigate } from "react-router-dom";
 // var ethers = require('ethers');
 
+
 export const CreatePoll = () => {
+	// let enablePre = new Date().toISOString(); // Enable the past time from the current time 
+	console.log(enablePre);
 	const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");
 	const [pType, setPType] = useState(0);
 	const [customStartDate, setCustomStartDate] = useState(false);
@@ -37,8 +40,10 @@ export const CreatePoll = () => {
 
 	const pollCreateHandle = async (e) => {
 		e.preventDefault();
-		const formData = new FormData(e.target),
-			formDataObj = Object.fromEntries(formData.entries());
+		const formData = new FormData(e.target)
+		// console.log("formData",formData);
+		const formDataObj = Object.fromEntries(formData.entries());
+		// console.log("formDatObj",formDataObj);
 
 		// if the poll has the start date
 		if (formDataObj.startDate) {
@@ -275,6 +280,7 @@ iii)Public - Anyone can vote just by connecting their account">
 					<Form.Check
 						type="datetime-local"
 						id="startDate"
+						min={new Date().toISOString().slice(0, -8)}
 						name="startDate"
 						onChange={(date) => {
 							const selectedDate = new Date(date.target.value);
