@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useEth from "../../contexts/EthContext/useEth";
 import Web3 from "web3";
 import Form from "react-bootstrap/Form";
@@ -33,8 +33,19 @@ export const CreatePoll = () => {
 	const {
 		state: { accounts, contract },
 	} = useEth();
-
+	const [endDateMinBoundary, setEndDateMinBoundary] = useState(new Date(Date.now() + (1 * 60 *1000)).toISOString().slice(0, -8))
 	const navigate = useNavigate();
+	let dateC = new Date(Date.now() +2000000)
+	const minStartDate = `${dateC.getFullYear()}-${(('0'+(dateC.getMonth()+1)).slice(-2))}-${(('0'+dateC.getDate()).slice(-2))}T${(('0'+dateC.getHours()).slice(-2))}:${(('0'+dateC.getMinutes()).slice(-2))}`
+
+
+	useEffect(() => {
+		if (!customStartDate) {
+			setEndDateMinBoundary(new Date(Date.now() + (1 * 60 *1000)).toISOString().slice(0, -8))
+		} 
+	},[customStartDate])
+
+	// alert(endDateMinBoundary)
 
 	const pollCreateHandle = async (e) => {
 		e.preventDefault();
@@ -262,6 +273,8 @@ iii)Public - Anyone can vote just by connecting their account">
 				checked={customStartDate}
 				onChange={(e) => setCustomStartDate(!customStartDate)}
 			/>
+
+			{/* set datepicker value to current time + 30, disable for current time + 30 */}
 			{customStartDate ? (
 				<Form.Group className="mb-3">
 					<Form.Label>
@@ -270,22 +283,29 @@ iii)Public - Anyone can vote just by connecting their account">
 					<Form.Check
 						type="datetime-local"
 						id="startDate"
-						min={new Date().toISOString().slice(0, -8)}
+						min={minStartDate}
 						name="startDate"
+
 						onChange={(date) => {
 							const selectedDate = new Date(date.target.value);
 							const utcString = selectedDate.toUTCString();
 							const localString = selectedDate.toLocaleString();
+							const startDateEpoch = (selectedDate.getTime() -
+							selectedDate.getMilliseconds()) /
+						1000;
 							setStartDate({
 								localdate: localString,
 								utcdate: utcString,
-								epoch:
-									(selectedDate.getTime() -
-										selectedDate.getMilliseconds()) /
-									1000,
+								epoch: startDateEpoch
 							});
+							setEndDateMinBoundary(`${(new Date(startDateEpoch * 1000)).getFullYear()}-${(('0'+((new Date(startDateEpoch * 1000)).getMonth()+1)).slice(-2))}-${(('0'+(new Date(startDateEpoch * 1000)).getDate()).slice(-2))}T${(('0'+(new Date(startDateEpoch * 1000)).getHours()).slice(-2))}:${(('0'+(new Date(startDateEpoch * 1000)).getMinutes()).slice(-2))}`)
 						}}
-						label={startDate.localdate}
+						label={startDate.localdate === "00/00/0000, 00:00:00 AM" ? (new Date(Date.now() + 2000000).toLocaleString()) : startDate.localdate}
+						value={(() => {
+							let dateC = new Date(Date.now() +2000000)
+							let ndate = `${dateC.getFullYear()}-${(('0'+(dateC.getMonth()+1)).slice(-2))}-${(('0'+dateC.getDate()).slice(-2))}T${(('0'+dateC.getHours()).slice(-2))}:${(('0'+dateC.getMinutes()).slice(-2))}`
+							return ndate
+						})()}
 						required
 					/>
 				</Form.Group>
@@ -307,7 +327,7 @@ iii)Public - Anyone can vote just by connecting their account">
 					<Form.Check
 						type="datetime-local"
 						id="endDate"
-						min={new Date().toISOString().slice(0, -8)}
+						min={endDateMinBoundary}
 						name="endDate"
 						onChange={(date) => {
 							const selectedDate = new Date(date.target.value);
@@ -322,7 +342,9 @@ iii)Public - Anyone can vote just by connecting their account">
 									1000,
 							});
 						}}
-						label={endDate.localdate}
+						// label={endDate.localdate}
+						label={startDate.localdate === "00/00/0000, 00:00:00 AM" ? (new Date(Date.now() + 2200000).toLocaleString()) : startDate.localdate}
+						value={endDateMinBoundary}
 						required
 					/>
 				</Form.Group>
