@@ -3,7 +3,7 @@ import useEth from "../../contexts/EthContext/useEth";
 import Form from "react-bootstrap/Form";
 import "./AddressImport.css";
 
-const AddressImport = () => {
+export const AddressImport = () => {
   const [importType, setImportType] = useState(0);
   return (
     <div style={{backgroundColor: "rgba(212,22,3,.2)", padding: "1rem"}}>
@@ -50,5 +50,3 @@ const AddressImport = () => {
     </div>
   );
 };
-
-export default AddressImport;

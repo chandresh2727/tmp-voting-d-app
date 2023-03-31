@@ -1,125 +1,115 @@
-#tooltip-help {
-	border: 0.8px solid blue;
-	color: blue;
-	border-radius: 25px;
-	padding: 1px 5px;
-	font-size: 0.8rem;
+*{
+    height: auto;
 }
 
-:root {
-	--color-primary: #2eec96;
-	--selection-color: #abffd9;
-	--unitless-max-font-size: 28;
+@-webkit-keyframes fadeOut {
+	0% {
+		opacity: 1;
+	}
+	99% {
+		opacity: 0.01;
+		/* width: 100%; */
+		/* height: 100%; */
+	}
+	100% {
+		opacity: 0;
+		/* width: 0;
+		height: 0; */
+	}
+}
+@keyframes fadeOut {
+	0% {
+		opacity: 1;
+	}
+	60% {
+		opacity: 0.8;
+	}
+	99% {
+		opacity: 0.01;
+		/* width: 100%;
+		height: 100%; */
+	}
+	100% {
+		opacity: 0;
+		/* width: 0;
+		height: 0; */
+	}
+}
+.Home{
+    margin: auto;
 }
 
-body {
-	padding: 2rem;
-	background-color: hsl(0, 0%, 95%);
-    font-size: 5vw !important;
+.editPoll{
+    width: fit-content  ;
 }
 
-form {
-	max-width: 100rem;
-	margin: 0 auto;
-	padding: 1.5rem 2rem;
-	background-color: white;
-	border-radius: 8px;
-    font-size: 2.3rem !important;
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+.fadeOut {
+    z-index: 999;
+    position: absolute;
+    display: block;
+    -webkit-animation: fadeOut 7s;
+    animation: fadeOut 7s;
+    animation-fill-mode: forwards;
+    top: 2%;
+    right: 0;
+    margin:  0 1% 2% 0;
 }
 
-form h1 {
-	margin-bottom: 1.5rem;
-	padding-bottom: 1rem;
-	border-bottom: 1px solid var(--gray-lighter);
-	/* font-size: var(--font-size-3); */
-	text-align: center;
-}
+/* div {
+    border: 1px solid black;
+} */
 
-input {
-	background-repeat: no-repeat;
-	background-position: right 1rem center;
-	background-size: 0.75rem;
-}
-
-.help-text {
-	display: block;
-	margin-top: 0.5rem;
-	/* font-size: var(--font-size-small); */
-}
-
-input, textarea,option, select {
-    height: 5rem;
-    font-size: 2rem !important;
-}
-
-input:placeholder-shown + label {
-	opacity: 0;
-	transform: translateY(1rem);
-}
-
-input:required + .help-text::before {
-	content: "*Required";
-}
-
-input:optional + .help-text::before {
-	content: "*Optional";
-}
-
-input:read-only {
-	border-color: var(--gray-lighter) !important;
-	color: var(--gray);
+button {
+	display: inline-block;
+	outline: 0;
 	cursor: pointer;
+	border: none;
+	padding: 0 56px;
+	height: 45px;
+	line-height: 45px;
+	border-radius: 7px !important;
+	background-color: #0070f3;
+	color: white;
+	font-weight: 400;
+	font-size: 16px;
+	box-shadow: 0 4px 14px 0 rgb(0 118 255 / 39%);
+	transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-input[type="datetime-local"] {
-	cursor: pointer;
+button:hover {
+	background: rgba(0, 118, 255, 0.9);
+	box-shadow: 0 6px 20px rgb(0 118 255 / 23%);
 }
 
-input:valid:not(input[type="radio"], input[type="checkbox"]) {
-	border-color: var(--color-primary);
-	background-image: url("data:image/svg+xml,%3Csvg width='45px' height='34px' viewBox='0 0 45 34' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cg stroke='none' stroke-width='1' fill='none' fill-rule='evenodd'%3E%3Cg transform='translate%28-56.000000, -59.000000%29' fill='%232EEC96'%3E%3Cpolygon points='70.1468531 85.8671329 97.013986 59 100.58042 62.5664336 70.1468531 93 56 78.8531469 59.5664336 75.2867133'%3E%3C/polygon%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
+.mainflex {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-content: center;
+    justify-content: space-evenly;
+    align-items: center;
 }
-
-input:invalid {
-	border-color: var(--color-error);
-	background-image: url("data:image/svg+xml,%3Csvg width='30px' height='30px' viewBox='0 0 30 30' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cg stroke='none' stroke-width='1' fill='none' fill-rule='evenodd'%3E%3Cg transform='translate%28-128.000000, -59.000000%29' fill='%23F44336'%3E%3Cpolygon points='157.848404 61.9920213 145.980053 73.8603723 157.848404 85.7287234 154.856383 88.7207447 142.988032 76.8523936 131.119681 88.7207447 128.12766 85.7287234 139.996011 73.8603723 128.12766 61.9920213 131.119681 59 142.988032 70.8683511 154.856383 59'%3E%3C/polygon%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
-}
-
-input:invalid:focus {
-	border-color: var(--color-error);
-}
-
-input:invalid + .help-text {
-	color: var(--color-error);
-}
-
-input[type="email"]:invalid + .help-text::before {
-	content: "You must enter a valid email.";
-}
-
-input:out-of-range + .help-text::before {
-	content: "Out of range";
-}
-
-input[type="checkbox"] + label {
-	user-select: none;
-}
-
-.submit {
-	background-color: #08d;
-	border-radius: 12px;
-	border: 0;
-	box-sizing: border-box;
-	color: #eee;
-	cursor: pointer;
-	/* font-size: 18px; */
-	height: 40px;
-	margin-top: 38px;
-	text-align: center;
+.list-group.list-group-numbered{
 	width: 100%;
+	max-width: 100%;
+	display: flex;
+	justify-content: center;
+	overflow: hidden;
+	/* align-items: center; */
 }
 
-.submit:active {
-	background-color: #06b;
+.customBtn{
+	font-size: inherit !important;
+	padding: 1% 2%;	
+	color: white !important;
+	background-color: dimgray !important;
+	border: 1px solid black !important	;
+	width: 125%;
+}
+.customBtn > *{
+	margin: 0 .25%;
+}
+
+.curpo {
+	cursor: pointer;
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import Form from "react-bootstrap/Form";
 import "./AddressImport.css";
 
-const DAOTokenImport = () => {
+export const DAOTokenImport = () => {
   // const [importType, setImportType] = useState(0);
   return (
     <div style={{backgroundColor: "rgba(12,232,83,.2)", padding: "1rem"}}>
@@ -13,10 +13,8 @@ const DAOTokenImport = () => {
 
         <Form.Group className="mb-3" controlId="tokenAmount">
             <Form.Label>Token Amount</Form.Label>
-            <Form.Control name="tokenAmount" type="number" placeholder="i.e 0.43" required/>
+            <Form.Control name="tokenAmount" type="number" min={0} placeholder="i.e 0.43" required/>
         </Form.Group>
     </div>
   );
 };
-
-export default DAOTokenImport;

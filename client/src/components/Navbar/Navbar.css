@@ -1,0 +1,20 @@
+html,body {
+    height:100%;
+}
+
+.Navbar{
+    margin-bottom: 1%;
+    background-color: #363632;
+    color: white;
+    font-size: 2rem;
+    padding: .5% 2%;
+    font-family:Verdana, Geneva, Tahoma, sans-serif;
+    max-width: none !important;
+}
+.participatePoll{
+    margin-bottom: 4% !important;
+}
+
+.monospace {
+    font-family: 'Courier New', Courier, monospace;
+}

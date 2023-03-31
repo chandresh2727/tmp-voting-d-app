@@ -1,0 +1,21 @@
+.PrefixVal {
+    padding: 5px 10px ;
+    background-color: darkslategrey;
+    color: white;
+    border-radius: 10px;
+    
+}
+
+.immutable{
+    font-size: 2vh;
+}
+
+.immutableItem{
+    margin: 1% 0
+}
+
+.managePollBtn{
+    border-radius: 7px !important;
+    font-size: 2rem !important;
+    padding: auto 2% !important;
+}

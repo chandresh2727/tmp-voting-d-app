@@ -2,7 +2,7 @@ import Web3 from "web3";
 
 export const checkNewtork = async () => {
     let testnet = false
-    let chainId = testnet ? 11155111 : 5777; // ganache
+    let chainId = testnet ? 11155111 : 1337; // ganache
     if (window.ethereum.networkVersion !== chainId) {
         try {
             await window.ethereum.request({
@@ -23,7 +23,7 @@ export const checkNewtork = async () => {
                                 decimals: 18,
                                 symbol: "ETH",
                             },
-                            rpcUrls: ["HTTP://127.0.0.1:7545"],
+                            rpcUrls: ["HTTP://127.0.0.1:8545"],
                         },
                     ],
                 });
