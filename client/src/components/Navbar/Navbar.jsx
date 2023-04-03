@@ -5,6 +5,7 @@ import useEth from "../../contexts/EthContext/useEth";
 import "./Navbar.css";
 import { useLocation} from "react-router-dom"
 // import { useRoute } from '@react-navigation/native';
+import moment from "moment-timezone";
 
 
 export const Navbar = () => {
@@ -13,8 +14,15 @@ export const Navbar = () => {
 	} = useEth();
 	const [hostid, setHostid] = useState("hstxxxxxxxxxxxxx");
 	const [voterid, setVoterid] = useState("vtrxxxxxxxxxxxxx");
+	const [currentTime, setCurrentTime] = useState("")
 	let location = 	useLocation();
+	const getCurrentTime = () => {
+		return `${new Date().toLocaleString()} ${moment.tz(moment.tz.guess()).zoneAbbr()}`
+	}
 
+	useEffect(()=>{
+		setInterval(() => setCurrentTime(getCurrentTime()),1000)
+	},[])
 
 	useEffect(() => {
 		const fetchUserDetails = async () => {
@@ -46,6 +54,9 @@ export const Navbar = () => {
 				<span>
 					&nbsp;&nbsp;Voter Id:{" "}
 					<b className="monospace"> {voterid} </b>
+				</span><br />
+				<span style={{color: "white", backgroundColor: "black", padding: "0.3% 0.5%", borderRadius: "5px", }}>
+  {currentTime}
 				</span>
 			</center>
 		</div>

@@ -12,53 +12,83 @@ import {
 	jsonIterator,
 } from "../../Handlers/iteratorHandler";
 import { useNavigate } from "react-router-dom";
+
+import {toIsoString} from '../../Handlers/utils'
+
+import moment from 'moment-timezone'
 // var ethers = require('ethers');
 
 
 export const CreatePoll = () => {
+
+
 	const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");
+	const add30MiN = 1000 * 60 * 30
 	const [pType, setPType] = useState(0);
-	const [customStartDate, setCustomStartDate] = useState(false);
-	const [startDate, setStartDate] = useState({
-		localdate: "00/00/0000, 00:00:00 AM",
-		utcdate: "",
-		epoch: 0,
-	});
-	const [customEndDate, setCustomEndDate] = useState(false);
-	const [endDate, setEndDate] = useState({
-		localdate: "00/00/0000, 00:00:00 AM",
-		utcdate: "",
-		epoch: 0,
-	});
+	const [customDateObj, setCustomDateObj] = useState({
+			startDate: {
+				minStartDate: toIsoString(new Date(moment().toLocaleString())).slice(0,-9),
+				custom: false,
+				epoch: moment().valueOf(),
+				utcdate: "",
+				localdate: new Date().toLocaleString(), // new Date().toLocaleString()
+			},
+			endDate: {
+				minEndDate: toIsoString(new Date(moment(Date.now() + add30MiN).toLocaleString())).slice(0,-9),
+				custom: false,
+				epoch: moment(Date.now() + add30MiN).valueOf(),
+				utcdate: "",
+				localdate: new Date(Date.now() + add30MiN).toLocaleString()
+			},
+	})
+
+	// const [customStartDate, setCustomStartDate] = useState(false);
+	// const [startDate, setStartDate] = useState({
+	// 	localdate: "00/00/0000, 00:00:00 AM",
+	// 	utcdate: "",
+	// 	epoch: 0,
+	// });
+	// const [customEndDate, setCustomEndDate] = useState(false);
+	// const [endDate, setEndDate] = useState({
+	// 	localdate: "00/00/0000, 00:00:00 AM",
+	// 	utcdate: "",
+	// 	epoch: 0,
+	// });
 	const {
 		state: { accounts, contract },
 	} = useEth();
-	const [endDateMinBoundary, setEndDateMinBoundary] = useState(new Date(Date.now() + (1 * 60 *1000)).toISOString().slice(0, -8))
+	// const [endDateMinBoundary, setEndDateMinBoundary] = useState(toIsoString(new Date(moment(Date.now()+  1800000).toLocaleString())).slice(0, -9))
 	const navigate = useNavigate();
-	let dateC = new Date(Date.now() +2000000)
-	const minStartDate = `${dateC.getFullYear()}-${(('0'+(dateC.getMonth()+1)).slice(-2))}-${(('0'+dateC.getDate()).slice(-2))}T${(('0'+dateC.getHours()).slice(-2))}:${(('0'+dateC.getMinutes()).slice(-2))}`
-
+	// let dateC = new Date(Date.now())
+	// const minStartDate = `${dateC.getFullYear()}-${(('0'+(dateC.getMonth()+1)).slice(-2))}-${(('0'+dateC.getDate()).slice(-2))}T${(('0'+dateC.getHours()).slice(-2))}:${(('0'+dateC.getMinutes()).slice(-2))}`
+ 
 
 	useEffect(() => {
-		if (!customStartDate) {
-			setEndDateMinBoundary(new Date(Date.now() + (1 * 60 *1000)).toISOString().slice(0, -8))
-		} 
-	},[customStartDate])
+		if (!customDateObj.startDate.custom) {
+			setCustomDateObj(obj => ({
+				...obj,
+				endDate: {
+					...obj.endDate,
+					minEndDate: toIsoString(new Date(moment(Date.now()+  add30MiN).toLocaleString())).slice(0, -9)
+				}
+			}))
+		}
+	},[customDateObj.startDate.custom, add30MiN])
 
 	// alert(endDateMinBoundary)
 
 	const pollCreateHandle = async (e) => {
 		e.preventDefault();
 		const formData = new FormData(e.target)
-		
 		const formDataObj = Object.fromEntries(formData.entries());
 
 		// if the poll has the start date
 		if (formDataObj.startDate) {
-			formDataObj.startDate = startDate.utcdate;
-			formDataObj.startDateEpoch = startDate.epoch;
+			formDataObj.startDate = customDateObj.startDate.utcdate;
+			formDataObj.startDateEpoch = customDateObj.startDate.epoch;
 			// current time + 30 min in milliseconds
-			if (Date.now() + 1800000 > formDataObj.startDateEpoch * 1000) {
+			alert(Date.now() + 1800000, formDataObj.startDateEpoch  )
+			if (Date.now() + 1800000 > formDataObj.startDateEpoch ) {
 				return alert(
 					"Start date should atleast be 30 Minutes in Future"
 				);
@@ -67,13 +97,13 @@ export const CreatePoll = () => {
 
 		// if the poll has the expiry date
 		if (formDataObj.endDate) {
-			formDataObj.endDate = endDate.utcdate;
-			formDataObj.endDateEpoch = endDate.epoch;
+			formDataObj.endDate = customDateObj.endDate.utcdate;
+			formDataObj.endDateEpoch = customDateObj.endDate.epoch;
 		}
 
 		// if the poll has an expiry date without the start date
 		if (!formDataObj.startDate && formDataObj.endDate) {
-			if (Date.now() > formDataObj.endDateEpoch * 1000) {
+			if (Date.now() > formDataObj.endDateEpoch ) {
 				return alert("End date should be the future date or time");
 			}
 		}
@@ -82,8 +112,8 @@ export const CreatePoll = () => {
 		if (
 			formDataObj.startDate &&
 			formDataObj.endDate &&
-			formDataObj.startDateEpoch * 1000 + 1800000 >
-				formDataObj.endDateEpoch * 1000
+			formDataObj.startDateEpoch  + 1800000 >
+				formDataObj.endDateEpoch 
 		) {
 			return alert("End date should start after the Start date");
 		}
@@ -158,14 +188,14 @@ export const CreatePoll = () => {
 			poll.tokenAmount = formDataObj.tokenAmount;
 		}
 
-		if (customStartDate) {
+		if (customDateObj.startDate.custom) {
 			pollTime.customStartDate = true;
-			pollTime.pollStartDate = startDate.epoch;
+			pollTime.pollStartDate = customDateObj.startDate.epoch;
 		}
 
-		if (customEndDate) {
+		if (customDateObj.endDate.custom) {
 			pollTime.customEndDate = true;
-			pollTime.pollEndDate = endDate.epoch;
+			pollTime.pollEndDate = customDateObj.endDate.epoch;
 		}
 
 		let hash = web3.utils.sha3(JSON.stringify(poll));
@@ -270,42 +300,77 @@ iii)Public - Anyone can vote just by connecting their account">
 				id="customStart"
 				name="customStart"
 				label="Custom Start Date ?"
-				checked={customStartDate}
-				onChange={(e) => setCustomStartDate(!customStartDate)}
+				checked={customDateObj.startDate.custom}
+				onChange={(e) => setCustomDateObj(obj => ({
+					...obj,
+					startDate: {
+						...obj.startDate,
+						custom: !obj.startDate.custom
+					}
+				}))}
 			/>
 
 			{/* set datepicker value to current time + 30, disable for current time + 30 */}
-			{customStartDate ? (
+			{customDateObj.startDate.custom ? (
 				<Form.Group className="mb-3">
 					<Form.Label>
-						Pick Starting Date (local time zone)
+						Pick Starting Date ({moment.tz.guess()} {moment.tz(moment.tz.guess()).zoneAbbr()}) 
 					</Form.Label>
+					
 					<Form.Check
 						type="datetime-local"
 						id="startDate"
-						min={minStartDate}
+						min={customDateObj.startDate.minStartDate.slice(0,-9)}
 						name="startDate"
-
 						onChange={(date) => {
-							const selectedDate = new Date(date.target.value);
+							const selectedDate = new Date(date.target.value)
 							const utcString = selectedDate.toUTCString();
-							const localString = selectedDate.toLocaleString();
-							const startDateEpoch = (selectedDate.getTime() -
-							selectedDate.getMilliseconds()) /
-						1000;
-							setStartDate({
-								localdate: localString,
+							const epoch = moment(selectedDate).valueOf()
+
+						setCustomDateObj(obj =>{ 
+							let newEndDateISO = toIsoString(new Date(obj.endDate.epoch)).slice(0,-9)
+							let newEDO = {
+								...obj.endDate,
+							}
+
+							if (obj.endDate.custom) {
+								if(obj.startDate.epoch + add30MiN> obj.endDate.epoch) {
+									newEndDateISO = toIsoString(new Date(moment((epoch )+ add30MiN).toLocaleString())).slice(0,-9)
+									newEDO.minEndDate =newEndDateISO
+								newEDO.localdate= new Date(newEndDateISO).toLocaleString()
+								newEDO.epoch = moment((epoch)+ add30MiN).valueOf()
+								}
+							}
+								
+							let retObj = {
+							endDate: newEDO,
+							startDate: {
+								...obj.startDate,
+								epoch,
+								minStartDate: toIsoString(new Date(epoch)),
 								utcdate: utcString,
-								epoch: startDateEpoch
-							});
-							setEndDateMinBoundary(`${(new Date(startDateEpoch * 1000)).getFullYear()}-${(('0'+((new Date(startDateEpoch * 1000)).getMonth()+1)).slice(-2))}-${(('0'+(new Date(startDateEpoch * 1000)).getDate()).slice(-2))}T${(('0'+(new Date(startDateEpoch * 1000)).getHours()).slice(-2))}:${(('0'+(new Date(startDateEpoch * 1000)).getMinutes()).slice(-2))}`)
+								localdate: selectedDate.toLocaleString()
+							}
+							}
+
+							console.log(retObj)
+							return retObj;
+
+					}
+						);
+							// setEndDateMinBoundary(`${toIsoString(new Date(moment(localEpoch+  1800000).toLocaleString())).slice(0,-7)}`)
 						}}
-						label={startDate.localdate === "00/00/0000, 00:00:00 AM" ? (new Date(Date.now() + 2000000).toLocaleString()) : startDate.localdate}
-						value={(() => {
-							let dateC = new Date(Date.now() +2000000)
-							let ndate = `${dateC.getFullYear()}-${(('0'+(dateC.getMonth()+1)).slice(-2))}-${(('0'+dateC.getDate()).slice(-2))}T${(('0'+dateC.getHours()).slice(-2))}:${(('0'+dateC.getMinutes()).slice(-2))}`
-							return ndate
-						})()}
+						label={customDateObj.startDate.localdate === "00/00/0000, 00:00:00 AM" ? new Date(moment.utc(toIsoString(new Date(moment().toLocaleString()))).toISOString()).toLocaleString() : customDateObj.startDate.localdate }
+						value={customDateObj.startDate.minStartDate.slice(0,-9)	
+							// toIsoString(new Date(moment().toLocaleString())).slice(0, -9)
+							
+						// 	(() => {
+						// 	let dateC = new Date(Date.now() +2000000)
+						// 	let ndate = `${dateC.getFullYear()}-${(('0'+(dateC.getMonth()+1)).slice(-2))}-${(('0'+dateC.getDate()).slice(-2))}T${(('0'+dateC.getHours()).slice(-2))}:${(('0'+dateC.getMinutes()).slice(-2))}`
+						// 	return ndate
+						// })()
+					
+					}
 						required
 					/>
 				</Form.Group>
@@ -318,33 +383,47 @@ iii)Public - Anyone can vote just by connecting their account">
 				id="customEnd"
 				name="customEnd"
 				label="Custom End Date ?"
-				checked={customEndDate}
-				onChange={(e) => setCustomEndDate(!customEndDate)}
+				checked={customDateObj.endDate.custom}
+				onChange={(e) => setCustomDateObj(obj => ({
+					...obj,
+					endDate: {
+						...obj.endDate,
+						custom: !obj.endDate.custom
+					}
+				}))}
 			/>
-			{customEndDate ? (
+			{customDateObj.endDate.custom ? (
 				<Form.Group className="mb-3">
-					<Form.Label>Pick Expire Date (local time zone)</Form.Label>
+					<Form.Label>Pick Expire Date  ({moment.tz.guess()} {moment.tz(moment.tz.guess()).zoneAbbr()}) 	</Form.Label>
 					<Form.Check
 						type="datetime-local"
 						id="endDate"
-						min={endDateMinBoundary}
+						min={toIsoString(new Date(customDateObj.startDate.custom ? (customDateObj.startDate.epoch + add30MiN): (Date.now() + add30MiN))).slice(0,-9)}
 						name="endDate"
 						onChange={(date) => {
+							// alert(endDateMinBoundary)
 							const selectedDate = new Date(date.target.value);
 							const utcString = selectedDate.toUTCString();
-							const localString = selectedDate.toLocaleString();
-							setEndDate({
-								localdate: localString,
-								utcdate: utcString,
-								epoch:
-									(selectedDate.getTime() -
-										selectedDate.getMilliseconds()) /
-									1000,
-							});
+							const epoch = moment(selectedDate).valueOf()
+							setCustomDateObj(obj => ({
+								...obj,
+								endDate: {
+									...obj.endDate,
+									epoch,
+									utcdate: utcString,
+									localdate: selectedDate.toLocaleString(),
+								}
+							}))
 						}}
 						// label={endDate.localdate}
-						label={startDate.localdate === "00/00/0000, 00:00:00 AM" ? (new Date(Date.now() + 2200000).toLocaleString()) : startDate.localdate}
-						value={endDateMinBoundary}
+						label={customDateObj.endDate.localdate === "00/00/0000, 00:00:00 AM" ? new Date(Date.now() + add30MiN).toLocaleString(): customDateObj.endDate.localdate}
+						value={(() => {
+							if (customDateObj.startDate.custom) {
+								return toIsoString(new Date(customDateObj.endDate.epoch)).slice(0, -9)
+							} else {
+								return toIsoString(new Date(moment().toLocaleString())).slice(0, -9)
+							}
+						})()}
 						required
 					/>
 				</Form.Group>
