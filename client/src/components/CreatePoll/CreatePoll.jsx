@@ -412,6 +412,7 @@ iii)Public - Anyone can vote just by connecting their account">
 									epoch,
 									utcdate: utcString,
 									localdate: selectedDate.toLocaleString(),
+									selectedDate: toIsoString(new Date(epoch))
 								}
 							}))
 						}}
@@ -421,7 +422,11 @@ iii)Public - Anyone can vote just by connecting their account">
 							if (customDateObj.startDate.custom) {
 								return toIsoString(new Date(customDateObj.endDate.epoch)).slice(0, -9)
 							} else {
-								return toIsoString(new Date(moment().toLocaleString())).slice(0, -9)
+								if(customDateObj.endDate.selectedDate) {
+									return customDateObj.endDate.selectedDate.slice(0, -9)
+								} else {
+									return toIsoString(new Date(moment(new Date(Date.now()+ add30MiN)).toLocaleString())).slice(0, -9)
+								}
 							}
 						})()}
 						required
