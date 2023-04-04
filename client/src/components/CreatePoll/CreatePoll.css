@@ -123,3 +123,13 @@ input[type="checkbox"] + label {
 .submit:active {
 	background-color: #06b;
 }
+
+.errorMsg {
+    font-size: initial;
+    color: red;
+    border: 1px solid;
+    padding: 0 .7%;
+    width: fit-content;
+    text-transform: uppercase;
+    font-family: monospace;
+}
