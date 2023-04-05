@@ -12,17 +12,19 @@ contract Voting {
 
     struct Vote {
         string voteId;
-        string voterId;
+        string pollId;
+        address userId;
         string optionId;
     }
 
-    // add the rights when user tries to cast to vote
-    struct Rights {
-        string pollId;
-        uint8 allowedVotes; // 0-255
-        uint8 remainingVotes; // 0-255
-        string[] castedVotes; // optionId array
-    }
+    // vid => Vote {}
+    mapping(string => Vote) public globalVoteMap;
+    // pollId -> string[vid]
+    mapping(string => string[]) public poll2voteMap;
+    // userId -> string[vid]
+    mapping(address => string[]) public user2voteMap;
+
+
 
     struct Option {
         string optionId; // opt prefix with random string
@@ -42,7 +44,7 @@ contract Voting {
         string hostId;
         string voterId;
         string[] pollId;
-        string[] rights; // rightId
+        string[] votes;
     }
 
     enum PollType {
@@ -85,7 +87,7 @@ contract Voting {
     User[] users;
     Poll[] demoPolls;
     PollTime[] demoPollTimes;
-    Rights[] rights;
+    // Rights[] rights;
     // Option[] options;
     mapping(address => User[1]) public usersMap;
     mapping(string => address) public hostIdMap;
@@ -380,13 +382,13 @@ contract Voting {
         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         require(optionIdMap[_pid].length != 0, "No options found");
         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
-        require(optionMap[_oid].optionName != "", "Option does not exists");
+        require(keccak256(abi.encodePacked((optionMap[_oid].optionName))) != keccak256(abi.encodePacked("")), "Option does not exists");
         bytes32 oidHash = keccak256(bytes(optionMap[_oid].optionId));
         bytes32 targetHash = keccak256(bytes(_oid));
         if (oidHash == targetHash) {
             delete optionMap[_oid];
-            for (uint8 i = 0; i< optionIdMap[_pid]; i++) {
-                if (optionIdMap[_pid][i] == _oid) {
+            for (uint8 i = 0; i < optionIdMap[_pid].length; i++) {
+                if (keccak256(abi.encodePacked(optionIdMap[_pid][i])) == keccak256(abi.encodePacked(_oid))) {
                     delete optionIdMap[_pid][i];
                 }
             }
@@ -410,7 +412,7 @@ contract Voting {
         require(pollIdMap[_pid] != address(0), "No Poll Found");
         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         require(optionIdMap[_pid].length != 0, "No options found");
-        require(optionMap[_option.optionId].optionName != "", "Option does not exists");
+        require(keccak256(abi.encodePacked((_option.optionName))) != keccak256(abi.encodePacked("")), "Option does not exists");
         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
         bytes32 oidHash = keccak256(bytes(optionMap[_option.optionId].optionId));
         bytes32 targetHash = keccak256(bytes(_option.optionId));
@@ -450,9 +452,7 @@ contract Voting {
     }
 
 
-// 
-
-    
+    event evCastVote(Vote addedVote, address castedBy, bool wasSuccessful);
 
     function castVote(string memory _pid, string memory _oid, bytes32 _hash, bytes32 _r, bytes32 _s, uint8 _v) public returns (bool){
         if (!_checkUsersExistence(msg.sender)) {
@@ -482,65 +482,21 @@ contract Voting {
             }
         }
 
+        bool _hasUserAlreadyVoted = false;
+        for (uint8 i = 0; i < user2voteMap[msg.sender].length; i++){
+            if(keccak256(abi.encodePacked(globalVoteMap[user2voteMap[msg.sender][i]].pollId)) == keccak256(abi.encodePacked(_pid))) {
+                _hasUserAlreadyVoted = true;
+                break;
+            }
+        }
+        require(!_hasUserAlreadyVoted, "You have already casted a vote for this poll");
 
-        // ELSE PUBLIC AND CONTINUE VOTE
+        string memory _vid = _generateId("vid");
 
-        // CHECK USERS RIGHT VOTE COUNT
-
-        // CAST VOTE
+        globalVoteMap[_vid] = Vote(_vid, _pid, msg.sender, _oid);
+        poll2voteMap[_pid].push(_vid);
+        user2voteMap[msg.sender].push(_vid);
+        emit evCastVote(globalVoteMap[_vid], msg.sender, true);
+        return true;
     }
-
-    // function castVote(
-    //     address _user,
-    //     string calldata _pid,
-    //     string calldata _optionId,
-    //     bytes32 _hash,
-    //     bytes32 _r,
-    //     bytes32 _s,
-    //     uint8 _v
-    // ) external returns (bool) {
-    //     require(_checkUsersExistence(_user), "User does not exist");
-    //     require(_validatePollId(_pid), "Invalid Poll ID format");
-
-    //     Poll storage poll = polls[_user][0];
-    //     require(poll.walletAddress == _user, "Invalid poll wallet address");
-    //     require(poll.pollStatus == PollStatus.LIVE, "Poll is not live");
-    //     require(poll.pollType == PollType.PUBLIC, "Poll is not public");
-
-    //     require(_verifySIG(_user, _hash, _r, _s, _v), "Invalid signature");
-
-    //     bool optionExists = false;
-    //     for (uint i = 0; i < poll.options.length; i++) {
-    //         if (keccak256(bytes(poll.options[i].optionId)) == keccak256(bytes(_optionId))) {
-    //             optionExists = true;
-    //             break;
-    //         }
-    //     }
-    //     require(optionExists, "Option ID does not exist in poll");
-
-    //     bool voted = false;
-    //     for (uint i = 0; i < poll.votingRights.length; i++) {
-    //         if (keccak256(bytes(poll.votingRights[i].pollId)) == keccak256(bytes(_pid))) {
-    //             voted = true;
-    //             VotingRight storage votingRight = poll.votingRights[i];
-    //             require(votingRight.remainingVotes > 0, "No remaining votes available");
-    //             for (uint j = 0; j < votingRight.castedVotes.length; j++) {
-    //                 require(
-    //                     keccak256(bytes(votingRight.castedVotes[j])) != keccak256(bytes(_optionId)),
-    //                     "Option already voted for"
-    //                 );
-    //             }
-    //             votingRight.remainingVotes -= 1;
-    //             votingRight.castedVotes.push(_optionId);
-    //             break;
-    //         }
-    //     }
-    //     require(voted, "User does not have voting rights for this poll");
-
-    //     Vote memory vote = Vote(_pid, findIdByAddress(_user).voterId, _optionId);
-    //     // add vote to blockchain
-    //     votes.push(vote);
-    //     emit evCastVote(vote, _user);
-    //     return true;
-    // }
 }
