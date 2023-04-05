@@ -100,12 +100,12 @@ export const CreatePoll = () => {
 			formDataObj.startDate = customDateObj.startDate.utcdate;
 			formDataObj.startDateEpoch = customDateObj.startDate.epoch;
 			// current time + 30 min in milliseconds
-			alert(Date.now() + 1800000, formDataObj.startDateEpoch)
-			if (Date.now() + 1800000 > formDataObj.startDateEpoch) {
-				return alert(
-					"Start date should be a Future Date"
-				);
-			}
+			// alert(Date.now() + 1800000, formDataObj.startDateEpoch)
+			// if (Date.now() + 1800000 > formDataObj.startDateEpoch) {
+			// 	return alert(
+			// 		"Start date should be a Future Date"
+			// 	);
+			// }
 		}
 
 		// if the poll has the expiry date

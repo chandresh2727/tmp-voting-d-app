@@ -28,6 +28,8 @@ export const Navbar = () => {
 		const fetchUserDetails = async () => {
 			return await contract?.methods.getUserDetails().call({ from: accounts[0] });
 		};
+		console.log(accounts)
+		console.log('contract!!!!!!!!!!!!!!!!', contract?.methods)
 		fetchUserDetails().then((details) => {
 			console.log(details)
 			details = details[0]

@@ -38,7 +38,7 @@ export const AddressImport = () => {
         value={'file'}
         checked={importType}
         required
-      />
+      /> 
       {importType === 1 ? (
         <Form.Group controlId="formFile" className="mb-3">
           <Form.Control type="file" name="addressListFile" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, .json, application/json" required/>

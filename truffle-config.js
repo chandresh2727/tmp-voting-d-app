@@ -75,7 +75,7 @@ module.exports = {
     ganache: {
       host: "127.0.0.1",     // Localhost (default: none)
       port: 8545,            // Standard Ethereum port (default: none)
-      network_id: "1337",       // Any network (default: none)
+      network_id: "1",       // Any network (default: none)
      },
     sepolia: {
       provider: () => new HDWalletProvider(privateKey, `https://sepolia.infura.io/v3/${infura_api_key}`),

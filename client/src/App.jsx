@@ -5,7 +5,7 @@ import {ManagePoll} from "./components/ManagePoll/ManagePoll";
 import {Home} from "./components/Home/Home";
 import {Navbar} from "./components/Navbar/Navbar";
 import {RedirectToHome} from "./components/RedirectToHome/RedirectToHome";
-import { AddOption } from "./components/AddOption/AddOption";
+import { AddOption } from "./components/AddOption/AddOption"; 
 // import Intro from "./components/Intro/";
 // import Setup from "./components/Setup";
 // import Demo from "./components/Demo";
