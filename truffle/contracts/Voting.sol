@@ -434,7 +434,14 @@ contract Voting {
 
     function getPollDetails(
         string memory _pid
-    ) public view returns (Poll memory) {
+    ) public returns (Poll memory) {
+        if (pollTimesMap[_pid].customEndDate) {
+            if(!(int(block.timestamp) < pollTimesMap[_pid].pollEndDate)) {
+                if(pollsMap[_pid].pollStatus == PollStatus.LIVE) {
+                    pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
+                }
+            }
+        }
         return pollsMap[_pid];
     }
 
