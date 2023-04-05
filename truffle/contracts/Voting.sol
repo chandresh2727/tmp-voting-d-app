@@ -438,12 +438,12 @@ contract Voting {
         return pollsMap[_pid];
     }
 
-    function checkBal() public view returns (string memory) {
-        address _tokenAddr = 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0;
-        IERC20 _token = IERC20(_tokenAddr);
-        bytes memory _lessTknErrMsg = abi.encodePacked("You do not possess enough $", _token.symbol());
-        return string(_lessTknErrMsg);
-    }
+    // function checkBal() public view returns (string memory) {
+    //     address _tokenAddr = 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0;
+    //     IERC20 _token = IERC20(_tokenAddr);
+    //     bytes memory _lessTknErrMsg = abi.encodePacked("You do not possess enough $", _token.symbol());
+    //     return string(_lessTknErrMsg);
+    // }
 
     function getPollTimeDetails(
         string memory _pid
@@ -453,7 +453,6 @@ contract Voting {
 
 
     event evCastVote(Vote addedVote, address castedBy, bool wasSuccessful);
-
     function castVote(string memory _pid, string memory _oid, bytes32 _hash, bytes32 _r, bytes32 _s, uint8 _v) public returns (bool){
         if (!_checkUsersExistence(msg.sender)) {
             _createUser(msg.sender);
@@ -464,9 +463,22 @@ contract Voting {
         require(pollsMap[_pid].pollStatus != PollStatus.DISCARDED, "Poll is DELETED");
         require(pollsMap[_pid].pollStatus != PollStatus.CONDUCTED, "Poll has ENDED");
         require(pollsMap[_pid].pollStatus == PollStatus.LIVE, "Voting has not started for this poll");
-        bool _authorized = false;
+
+        if (pollTimesMap[_pid].customStartDate) {
+            require(int(block.timestamp) > pollTimesMap[_pid].pollStartDate, "Poll has not started yet!");
+        }
+
+        if (pollTimesMap[_pid].customEndDate) {
+            if(!(int(block.timestamp) < pollTimesMap[_pid].pollEndDate)) {
+                if(pollsMap[_pid].pollStatus == PollStatus.LIVE) {
+                    pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
+                }
+            }
+            require(int(block.timestamp) < pollTimesMap[_pid].pollEndDate, "Poll has ended");
+        }
 
         if (pollsMap[_pid].pollType == PollType.PRIVATE || pollsMap[_pid].pollType == PollType.METERED) {
+            bool _authorized = false;
             for (uint8 i = 0; i < pollsMap[_pid].addressList.length; i++) {
                 if( pollsMap[_pid].addressList[i] == msg.sender ) {
                     _authorized = true;
