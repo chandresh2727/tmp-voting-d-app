@@ -10,7 +10,6 @@ import { AddOption } from "./components/AddOption/AddOption";
 // import Setup from "./components/Setup";
 // import Demo from "./components/Demo";
 // import Footer from "./components/Footer";
-
 function App() {
 	return (
 		<EthProvider>

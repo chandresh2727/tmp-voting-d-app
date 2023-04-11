@@ -48,9 +48,13 @@ input {
 	/* font-size: var(--font-size-small); */
 }
 
-input, textarea,option, select {
+input,option, select {
     height: 5rem;
     font-size: 2rem !important;
+}
+
+textarea {
+	font-size: 2rem !important;
 }
 
 input:placeholder-shown + label {

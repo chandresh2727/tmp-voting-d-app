@@ -74,14 +74,14 @@ module.exports = {
     // ganache
     // development: {
     //   host: "127.0.0.1",     // Localhost (default: none)
-    //   port: 8545,            // Standard Ethereum port (default: none)
+    //   port: 7545,            // Standard Ethereum port (default: none)
     //   network_id: "1337",       // Any network (default: none)
     //  },  
     // sepolia  
     ganache: {
       host: "127.0.0.1",     // Localhost (default: none)
-      port: 8545,            // Standard Ethereum port (default: none)
-      network_id: "1",       // Any network (default: none)
+      port: 7545,            // Standard Ethereum port (default: none)
+      network_id: 1,       // Any network (default: none)
      },
     sepolia: {
       provider: () => new HDWalletProvider(privateKey, `https://sepolia.infura.io/v3/${infura_api_key}`),
@@ -92,9 +92,6 @@ module.exports = {
       timeoutBlocks: 2000,  // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
      },
-    
-    
-    
     // An additional network, but with some advanced options…
     // advanced: {
     //   port: 8777,             // Custom port

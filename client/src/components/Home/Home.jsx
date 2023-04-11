@@ -6,8 +6,9 @@ import { useNavigate, createSearchParams } from "react-router-dom";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
-import ListGroup from "react-bootstrap/ListGroup"
-import Badge from "react-bootstrap/Badge"
+import ListGroup from "react-bootstrap/ListGroup";
+import Badge from "react-bootstrap/Badge";
+import Toast from "react-bootstrap/Toast";
 import "../CreatePoll/CreatePoll.css";
 import useEth from "../../contexts/EthContext/useEth";
 import { FaEdit } from "react-icons/fa";
@@ -15,37 +16,49 @@ import { FaEdit } from "react-icons/fa";
 export const Home = () => {
 	const navigate = useNavigate();
 	const {
-		state: { accounts, contract, },
+		state: { accounts, contract },
 	} = useEth();
 	const [pid2, setPid2] = useState("");
 	const [polls, setPolls] = useState({ fetched: false, data: {} });
-	const varients = ["light", "dark"]
-
+	const varients = ["light", "dark"];
 
 	useEffect(() => {
 		const fetchUserPolls = async () => {
-			return await contract?.methods.getPollsFromUser(accounts[0]).call({ from: accounts[0] });
+			return await contract?.methods
+				.getPollsFromUser(accounts[0])
+				.call({ from: accounts[0] });
 		};
 		fetchUserPolls().then((results) => {
-			console.log(results)
-			setPolls({ fetched: true, data: results })
-		})
-	}, [accounts, contract])
+			console.log(results);
+			setPolls({ fetched: true, data: results });
+		});
+	}, [accounts, contract]);
 
-	console.log(polls)
-
+	console.log(polls);
 
 	return (
 		<div className="Home artificialContainer">
 			<div className="fadeOut">
-				{getUrlVars()["error"] ? (
-					<Alert variant="danger">
-						{" "}
+			{getUrlVars()["error"] ? (
+				<Toast
+					class="lg-toast"
+					bg={"danger"}
+					autohide={true}
+					delay={5000}>
+					<Toast.Header closeButton={false}>
+						Error
+					</Toast.Header>
+					<Toast.Body className="text-white">
 						{decodeURIComponent(getUrlVars()["msg"])}
-					</Alert>
-				) : (
-					""
-				)}
+					</Toast.Body>
+				</Toast>
+			) : (
+				// <Alert variant="danger">
+				// 	{" "}
+				// 	{decodeURIComponent(getUrlVars()["msg"])}
+				// </Alert>
+				""
+			)}
 			</div>
 			<div className="participatePoll">
 				<Form
@@ -87,7 +100,10 @@ export const Home = () => {
 				<div className="editPoll">
 					<h1>Your Polls:</h1>
 					{!polls.fetched ? (
-						<Button variant="primary" disabled className="customBtn">
+						<Button
+							variant="primary"
+							disabled
+							className="customBtn">
 							<Spinner
 								as="span"
 								animation="grow"
@@ -97,26 +113,47 @@ export const Home = () => {
 							/>
 							Fetching Polls...
 						</Button>
+					) : !polls.data || polls.data.length === 0 ? (
+						"You have yet to create a poll"
 					) : (
-						( (!polls.data || polls.data.length === 0) ?
-							"You have yet to create a poll" :
-							<ListGroup as="ol" numbered>
-								{polls.data.map(function (pollsdata, ind) {
-									return (<ListGroup.Item variant={varients[ind % 2]} key={ind}
+						<ListGroup as="ol" numbered>
+							{polls.data.map(function (pollsdata, ind) {
+								return (
+									<ListGroup.Item
+										variant={varients[ind % 2]}
+										key={ind}
 										as="li"
-										className="d-flex justify-content-between align-items-start"
-									>
+										className="d-flex justify-content-between align-items-start">
 										<div>
-											<div className="fw-bold" title={pollsdata.pollName}>&nbsp;&nbsp;{
-											(pollsdata.pollName.length > 31) ? `${pollsdata.pollName.slice(0,30)}...` : pollsdata.pollName}&nbsp;&nbsp;</div>
+											<div
+												className="fw-bold"
+												title={pollsdata.pollName}>
+												&nbsp;&nbsp;
+												{pollsdata.pollName.length > 31
+													? `${pollsdata.pollName.slice(
+															0,
+															30
+													  )}...`
+													: pollsdata.pollName}
+												&nbsp;&nbsp;
+											</div>
 										</div>
-										<Badge bg="primary curpo" pill title="manage" onClick={	() => navigate("/manage/poll/modify?pid=" +  pollsdata.pollId)}>
-											<FaEdit/>
+										<Badge
+											bg="primary curpo"
+											pill
+											title="manage"
+											onClick={() =>
+												navigate(
+													"/manage/poll/modify?pid=" +
+														pollsdata.pollId
+												)
+											}>
+											<FaEdit />
 										</Badge>
-									</ListGroup.Item>)
-								})}
-							</ListGroup>
-						)
+									</ListGroup.Item>
+								);
+							})}
+						</ListGroup>
 					)}
 				</div>
 			</div>

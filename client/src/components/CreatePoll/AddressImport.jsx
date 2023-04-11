@@ -17,7 +17,7 @@ export const AddressImport = () => {
         required
       />
       {importType === 0 ? (
-        <Form.Group className="mb-3" controlId="pollDesc">
+        <Form.Group className="mb-3" controlId="addressList">
           <Form.Label>List of addresses: </Form.Label>
           <Form.Control
             name="addressList"

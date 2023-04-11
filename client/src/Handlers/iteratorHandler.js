@@ -1,6 +1,27 @@
 import { read, utils } from "xlsx";
 
-export const textAreaIterator = (textInpt, cb) =>  cb(textInpt.split(",").filter((v) => v.match(/0x[a-fA-F0-9]{40}$/)))
+export const textAreaIterator = (textInpt, cb) => {
+    console.log(textInpt)
+    let addressArray = []
+    let rawArr = textInpt.split(",") /*.filter((v) => v.match(/0x[a-fA-F0-9]{40}$/))*/
+    rawArr.forEach((v,ind) => {
+        let i = 0
+        let j = 42
+        for (j; j <= v.length; j++) {
+            let addr = v.toString().substring(i,j+1).trim()
+            console.log(i, addr, addr.match(/0x[a-fA-F0-9]{40}$/), !addressArray.includes(addr))
+            if (addr.match(/0x[a-fA-F0-9]{40}$/)) {
+                addressArray.push(addr)
+                i+=40;
+                continue;
+            }
+            i++
+        }
+    })
+    console.log(addressArray)
+    cb(addressArray)
+    return cb(addressArray)
+}
 
 export const excelIterator =  (excelFile, cb) => {
     let addressArray = []

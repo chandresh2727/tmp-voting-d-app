@@ -5,9 +5,13 @@ export const checkNewtork = async () => {
     let chainId = testnet ? 11155111 : 1337; // ganache
     if (window.ethereum.networkVersion !== chainId) {
         try {
+            let params =  [{ chainId: Web3.utils.toHex(chainId)}]
+            if (!testnet) {
+                params.rpcUrls = ["HTTP://127.0.0.1:7545"]
+            }
             await window.ethereum.request({
                 method: "wallet_switchEthereumChain",
-                params: [{ chainId: Web3.utils.toHex(chainId) }],
+                params,
             });
         } catch (err) {
             // This error code indicates that the chain has not been added to MetaMask
@@ -15,7 +19,7 @@ export const checkNewtork = async () => {
                 await window.ethereum.request({
                     method: "wallet_addEthereumChain",
                     params: [
-                        {
+                        { 
                             chainName: "Ganache Testnet",
                             chainId: Web3.utils.toHex(chainId),
                             nativeCurrency: {
@@ -23,7 +27,7 @@ export const checkNewtork = async () => {
                                 decimals: 18,
                                 symbol: "ETH",
                             },
-                            rpcUrls: ["HTTP://127.0.0.1:8545"],
+                            rpcUrls: ["HTTP://127.0.0.1:7545"],
                         },
                     ],
                 });

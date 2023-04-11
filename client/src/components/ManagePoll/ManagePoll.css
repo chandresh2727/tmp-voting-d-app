@@ -1,21 +1,49 @@
 .PrefixVal {
-    padding: 5px 10px ;
-    background-color: darkslategrey;
-    color: white;
-    border-radius: 10px;
-    
+    padding: 5px 10px;
+    background-color: rgba(40,40,40,0.4);
+    /* color: white; */
+    /* border: 1px solid black !important; */
+    border-radius: 3px;
+    color: black;
+    color: gold;
 }
 
 .immutable{
     font-size: 2vh;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .immutableItem{
-    margin: 1% 0
+    margin: 1% 0;
+    background: rgba(120,120,110,.5);
+    padding: 8px;
+    text-transform: uppercase;
+    border: 1px solid;
+    border-radius: 4px;
+    cursor: not-allowed;
 }
 
 .managePollBtn{
     border-radius: 7px !important;
     font-size: 2rem !important;
     padding: auto 2% !important;
+}
+.fakeBtn{
+    padding: 5px 10px;
+    margin: 5px 0;
+    color: white;
+    border-radius: 7.5px;
+    cursor: pointer;
+    box-shadow: 2px 5px 12px 1px rgba(120,110,135,.5);
+    font-size: 1.45rem;
+}
+
+.fakeBtn:hover{
+    filter: hue-rotate(30deg);
+}
+
+.fakeBtn:active, .fakeBtn:focus{
+    filter: hue-rotate(-20deg);
 }
