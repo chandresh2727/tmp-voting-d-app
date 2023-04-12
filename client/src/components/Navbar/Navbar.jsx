@@ -30,6 +30,7 @@ export const Navbar = () => {
 		};
 		console.log(accounts)
 		console.log('contract!!!!!!!!!!!!!!!!', contract?.methods)
+		// console.log()
 		fetchUserDetails().then((details) => {
 			console.log(details)
 			details = details[0]

@@ -60,6 +60,8 @@ export const CreatePoll = () => {
 		message: 0,
 	});
 
+	console.log(web3)
+
 	// const [customStartDate, setCustomStartDate] = useState(false);
 	// const [startDate, setStartDate] = useState({
 	// 	localdate: "00/00/0000, 00:00:00 AM",
@@ -170,7 +172,7 @@ export const CreatePoll = () => {
 				addressList: ["0x0000000000000000000000000000000000000000"],
 				tokenContractAddress:
 					"0x0000000000000000000000000000000000000000",
-				tokenAmount: 0,
+				tokenAmount: 0.0,
 				options: ["tmp"],
 			};
 
@@ -190,7 +192,7 @@ export const CreatePoll = () => {
 					// todo remove the current selected file
 				} else {
 					formDataObj.addressList = res;
-					cb(false);
+					// cb(false);
 				}
 			};
 

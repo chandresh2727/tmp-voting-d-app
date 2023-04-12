@@ -13,8 +13,8 @@ export const DAOTokenImport = () => {
 
         <Form.Group className="mb-3" controlId="tokenAmount">
             <Form.Label>Token Amount</Form.Label>
-            <Form.Control name="tokenAmount" type="number" min={0.000000001}
-								step="0.000000001"
+            <Form.Control name="tokenAmount" type="number" min={1}
+								// step="0.000000001"
 								pattern="^(([0-9]*)|(([0-9]*)\.([0-9]*)))$" placeholder="i.e 0.43" required/>
         </Form.Group>
     </div>

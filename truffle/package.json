@@ -9,5 +9,9 @@
     "@truffle/hdwallet-provider": "^2.1.7",
     "dotenv": "^16.0.3",
     "remixd": "^0.2.4"
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "^4.8.2",
+    "@openzeppelin/truffle-upgrades": "^1.17.1"
   }
 }

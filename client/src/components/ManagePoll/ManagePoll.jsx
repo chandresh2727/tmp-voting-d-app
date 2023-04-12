@@ -4,6 +4,7 @@ import useEth from "../../contexts/EthContext/useEth";
 import { getUrlVars, getRPCErrorMessage } from "../../Handlers/utils";
 import { DisplayOptions } from "../DisplayOption/DisplayOption";
 import Form from "react-bootstrap/Form";
+import Web3 from "web3";
 import {
 	textAreaIterator,
 	excelIterator,
@@ -13,14 +14,14 @@ import { AddOption } from "../AddOption/AddOption";
 import "./ManagePoll.css";
 import { useNavigate } from "react-router-dom";
 
-
 export const ManagePoll = () => {
+	const web3 = new Web3(Web3.givenProvider || "ws://localhost:7545");
 	const {
 		state: { accounts, contract },
 	} = useEth();
 	const placeholerVal = "Loading...";
-	const [addressListChanged, setAddressListChanged] = useState(false)
-	const [rawAddressList, setRawAddressList] = useState("Loading")
+	const [addressListChanged, setAddressListChanged] = useState(false);
+	const [rawAddressList, setRawAddressList] = useState("Loading");
 	const [poll, setPoll] = useState({
 		fetched: false,
 		data: {
@@ -74,7 +75,9 @@ export const ManagePoll = () => {
 	}, [contract, accounts]);
 
 	const handleCompile = (rawInput) => {
-		let filteredAddress = Array.from(new Set(textAreaIterator(rawInput, (e) => e)))
+		let filteredAddress = Array.from(
+			new Set(textAreaIterator(rawInput, (e) => e))
+		);
 		setPoll((prevState) => ({
 			...prevState,
 			data: {
@@ -82,9 +85,9 @@ export const ManagePoll = () => {
 				addressList: filteredAddress,
 			},
 		}));
-		setRawAddressList(filteredAddress.join(", "))
-		setAddressListChanged(false)
-	}
+		setRawAddressList(filteredAddress.join(", "));
+		setAddressListChanged(false);
+	};
 
 	useEffect(() => {
 		const getPollDetails = async () => {
@@ -99,7 +102,7 @@ export const ManagePoll = () => {
 		};
 		getPollDetails().then((details) => {
 			console.log(details);
-			setRawAddressList(details.addressList.join(", "))
+			setRawAddressList(details.addressList.join(", "));
 			setPoll({
 				fetched: true,
 				data: {
@@ -144,7 +147,41 @@ export const ManagePoll = () => {
 		3: "DISCARDED",
 	};
 
-	const saveChanges = () => {};
+	const saveChanges = async (e) => {
+		e.preventDefault();
+		if (addressListChanged) {
+			return alert("please compile addressess");
+		}
+		if (poll.data.addressList.length === 0) {
+			return alert("please add at least 1 address");
+		}
+		let hash = web3.utils.sha3(JSON.stringify(poll.data));
+		let signature = await web3.eth.personal
+			.sign(hash, accounts[0])
+			.catch((e) => {
+				console.log(e);
+			});
+		let r = signature.slice(0, 66);
+		let s = "0x" + signature.slice(66, 130);
+		let v = parseInt(signature.slice(130, 132), 16);
+		let value = await contract.methods
+				.updatePoll(poll.data, 	hash,
+					signature,
+					r,
+					s,
+					v)
+				.send({ from: accounts[0] })
+				.catch((e) => {
+					console.log(e)
+					alert("user cancelled the request", "hh");
+				});
+		let a = await value.events["evUpdatePoll"].returnValues["successfull"];
+		if(a) {
+			window.location.reload()
+		} else {
+			alert("something went wrong!")
+		}
+	};
 
 	return (
 		<div className="artificialContainer">
@@ -226,7 +263,24 @@ export const ManagePoll = () => {
 				</Form.Group>
 				{parseInt(poll.data.pollType) > 0 ? (
 					<Form.Group className="mb-3" controlId="addressList">
-						<Form.Label style={{display:"flex", alignItems: "center"}}>List of addresses&nbsp;&nbsp; <span className="sm fakeBtn"  style={addressListChanged ?{backgroundColor: "red"} : {backgroundColor: "green"}} onClick={(e) => addressListChanged ? handleCompile(rawAddressList): ""}>Compile Addresses</span></Form.Label>
+						<Form.Label
+							style={{ display: "flex", alignItems: "center" }}>
+							List of addresses&nbsp;&nbsp;{" "}
+							<span
+								className="sm fakeBtn"
+								style={
+									addressListChanged
+										? { backgroundColor: "red" }
+										: { backgroundColor: "green" }
+								}
+								onClick={(e) =>
+									addressListChanged
+										? handleCompile(rawAddressList)
+										: ""
+								}>
+								Compile Addresses
+							</span>
+						</Form.Label>
 						<Form.Control
 							name="addressList"
 							as="textarea"
@@ -234,8 +288,9 @@ export const ManagePoll = () => {
 							placeholder="0xabcd, 0x1234, 0xa2b1"
 							value={rawAddressList}
 							onChange={(e) => {
-								setAddressListChanged(true)
-								setRawAddressList(e.target.value)}}
+								setAddressListChanged(true);
+								setRawAddressList(e.target.value);
+							}}
 						/>
 					</Form.Group>
 				) : (
@@ -270,8 +325,8 @@ export const ManagePoll = () => {
 							<Form.Control
 								name="tokenAmount"
 								type="number"
-								min={0.000000001}
-								step="0.000000001"
+								min={1}
+								// step="0.000000001"
 								pattern="^(([0-9]*)|(([0-9]*)\.([0-9]*)))$"
 								// max={9999999}
 								placeholder="i.e 0.43"

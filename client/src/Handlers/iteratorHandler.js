@@ -11,8 +11,11 @@ export const textAreaIterator = (textInpt, cb) => {
             let addr = v.toString().substring(i,j+1).trim()
             console.log(i, addr, addr.match(/0x[a-fA-F0-9]{40}$/), !addressArray.includes(addr))
             if (addr.match(/0x[a-fA-F0-9]{40}$/)) {
+                if(addr[0] !== "0" && addr[0] !== "x") {
+                    addr = addr.slice(1)
+                }
                 addressArray.push(addr)
-                i+=40;
+                i+=42;
                 continue;
             }
             i++
