@@ -4,6 +4,7 @@ import useEth from "../../contexts/EthContext/useEth";
 import { getUrlVars, getRPCErrorMessage } from "../../Handlers/utils";
 import { DisplayOptions } from "../DisplayOption/DisplayOption";
 import Form from "react-bootstrap/Form";
+import Toast from "react-bootstrap/Toast";
 import Web3 from "web3";
 import {
 	textAreaIterator,
@@ -22,6 +23,14 @@ export const ManagePoll = () => {
 	const placeholerVal = "Loading...";
 	const [addressListChanged, setAddressListChanged] = useState(false);
 	const [rawAddressList, setRawAddressList] = useState("Loading");
+	const [statusType, setStatusType] = useState(0);
+	// console.log(message)
+	// const [message, setMessage] = useState({
+	// 	new: false,
+	// 	msg: "",
+	// });
+	const [showSuccessMsg, setShowSuccessMsg] = useState(false)
+	console.log(showSuccessMsg)
 	const [poll, setPoll] = useState({
 		fetched: false,
 		data: {
@@ -100,39 +109,67 @@ export const ManagePoll = () => {
 				.getPollTimeDetails(getUrlVars()["pid"])
 				.call({ from: accounts[0] });
 		};
-		getPollDetails().then((details) => {
-			console.log(details);
-			setRawAddressList(details.addressList.join(", "));
-			setPoll({
-				fetched: true,
-				data: {
-					addressList: details.addressList,
-					hostId: details.hostId,
-					options: details.options,
-					pollDescription: details.pollDescription,
-					pollId: details.pollId,
-					pollName: details.pollName,
-					pollStatus: details.pollStatus,
-					pollType: details.pollType,
-					tokenAmount: details.tokenAmount,
-					tokenContractAddress: details.tokenContractAddress,
-					walletAddress: details.walletAddress,
-				},
+		getPollDetails()
+			.then((details) => {
+				console.log(details);
+				setRawAddressList(details.addressList.join(", "));
+				setPoll({
+					fetched: true,
+					data: {
+						addressList: details.addressList,
+						hostId: details.hostId,
+						options: details.options,
+						pollDescription: details.pollDescription,
+						pollId: details.pollId,
+						pollName: details.pollName,
+						pollStatus: details.pollStatus,
+						pollType: details.pollType,
+						tokenAmount: details.tokenAmount,
+						tokenContractAddress: details.tokenContractAddress,
+						walletAddress: details.walletAddress,
+					},
+				});
+			})
+			.catch((e) => {
+				let commString =
+					"VM Exception while processing transaction: revert ";
+				if (e.toString().includes(commString)) {
+					let emsg = getRPCErrorMessage(e);
+					console.log("----ManagePoll.jsx----", emsg);
+					window.location.href = "/?error=1&msg=" + emsg;
+				} else {
+					// alert("unknown error occured");
+					console.log("managepolljsx ->getpolldetails().catch()");
+					throw new Error(e);
+				}
 			});
-		});
-		getPollTimeDetails().then((details) => {
-			console.log("details", details);
-			setPollTime({
-				fetched: true,
-				data: {
-					customStartDate: details.customStartDate,
-					customEndDate: details.customEndDate,
-					pollStartDate: details.pollStartDate,
-					pollEndDate: details.pollEndDate,
-				},
+		getPollTimeDetails()
+			.then((details) => {
+				console.log("details", details);
+				setPollTime({
+					fetched: true,
+					data: {
+						customStartDate: details.customStartDate,
+						customEndDate: details.customEndDate,
+						pollStartDate: details.pollStartDate,
+						pollEndDate: details.pollEndDate,
+					},
+				});
+			})
+			.catch((e) => {
+				let commString =
+					"VM Exception while processing transaction: revert ";
+				if (e.toString().includes(commString)) {
+					let emsg = getRPCErrorMessage(e);
+					console.log("----ManagePoll.jsx----", emsg);
+					window.location.href = "/?error=1&msg=" + emsg;
+				} else {
+					console.log("managepolljsx ->getPollTimeDetails().catch()");
+					// alert("unknown error occured");
+					throw new Error(e);
+				}
 			});
-		});
-	}, [contract, accounts]);
+	}, [contract, accounts, poll.fetched,]);
 
 	const pollTypeEnum = {
 		0: "PUBLIC",
@@ -147,6 +184,48 @@ export const ManagePoll = () => {
 		3: "DISCARDED",
 	};
 
+	useEffect(() => {
+
+		const changeStatus = async (ind) => {
+			console.log("indexxxxxxxxxx", ind);
+			let hash = web3.utils.sha3(JSON.stringify(ind));
+			setStatusType(0);
+			let signature = await web3.eth.personal
+				.sign(hash, accounts[0])
+				.catch((e) => {
+					console.log(e);
+				});
+			let r = signature.slice(0, 66);
+			let s = "0x" + signature.slice(66, 130);
+			let v = parseInt(signature.slice(130, 132), 16);
+			let value = await contract.methods
+				.updatePollStatus(
+					poll.data.pollId,
+					ind,
+					hash,
+					signature,
+					r,
+					s,
+					v
+				)
+				.send({ from: accounts[0] })
+				.catch((e) => {
+					console.log(e);
+					alert("user cancelled the status change", "hh");
+				});
+			console.log(await value);
+			let a = await value.events["evUpdatePollStatus"].returnValues[
+				"successfull"
+			];
+			console.log("yaha pe hu12eQer32qQ@#4rq3$RQ#$Q#@Q@ =>  ", a);
+			if (a) {
+				window.location.reload();
+			} else {
+				alert("something went wrong!");
+			}
+		};
+		if ([1, 3].includes(statusType)) changeStatus(statusType);
+	}, [statusType, setStatusType, accounts, poll, contract, web3]);
 	const saveChanges = async (e) => {
 		e.preventDefault();
 		if (addressListChanged) {
@@ -165,27 +244,84 @@ export const ManagePoll = () => {
 		let s = "0x" + signature.slice(66, 130);
 		let v = parseInt(signature.slice(130, 132), 16);
 		let value = await contract.methods
-				.updatePoll(poll.data, 	hash,
-					signature,
-					r,
-					s,
-					v)
-				.send({ from: accounts[0] })
-				.catch((e) => {
-					console.log(e)
-					alert("user cancelled the request", "hh");
-				});
+			.updatePoll(poll.data, hash, signature, r, s, v)
+			.send({ from: accounts[0] })
+			.catch((e) => {
+				console.log(e);
+				alert("user cancelled the request", "hh");
+			});
+		console.log("value ", value);
+
 		let a = await value.events["evUpdatePoll"].returnValues["successfull"];
-		if(a) {
-			window.location.reload()
+		console.log("evUpdatePoll", a);
+
+		if (a) {
+			setShowSuccessMsg(true)
+			setTimeout(() => {
+				setShowSuccessMsg(false)
+			}, 7000);
+			setPoll({ ...poll, fetched: false });
+
+			// window.location.reload();
 		} else {
-			alert("something went wrong!")
+			alert("something went wrong!");
 		}
 	};
 
 	return (
 		<div className="artificialContainer">
-			<Form>
+			<div className="fadeOut">
+				{getUrlVars()["error"] ? (
+					<Toast
+						className="lg-toast"
+						bg={"danger"}
+						autohide={true}
+						delay={5000}>
+						<Toast.Header closeButton={false}>Error</Toast.Header>
+						<Toast.Body className="text-white">
+							{decodeURIComponent(getUrlVars()["msg"])}
+						</Toast.Body>
+					</Toast>
+				) : (
+					""
+				)}
+			</div>
+
+			<div className="fadeOut">
+				{getUrlVars()["success"] ? (
+					<Toast
+						className="lg-toast"
+						bg={"success"}
+						autohide={true}
+						delay={5000}>
+						<Toast.Header closeButton={false}>success</Toast.Header>
+						<Toast.Body className="text-white">
+							{decodeURIComponent(getUrlVars()["msg"])}
+						</Toast.Body>
+					</Toast>
+				) : (
+					""
+				)}
+			</div>
+			<div className={showSuccessMsg ? 'fadeOut' : ''}>
+			{showSuccessMsg ? (
+					<Toast
+						className="lg-toast"
+						bg={"success"}
+						autohide={true}
+						delay={5000}>
+						<Toast.Header closeButton={false}>Success</Toast.Header>
+						<Toast.Body className="text-white">
+							"Poll Updated Successfully"
+						</Toast.Body>
+					</Toast>
+				) : (
+					""
+				)}
+			</div>
+			
+			<Form style={(poll.data.pollStatus === "1") ? {border: "1.5px solid green", boxShadow: "1px 1px 225px -60px green"}: {}}>
+			{poll.data.pollStatus === "1" ? <span className="status live">live</span> : (poll.data.pollStatus=== "0" ?  <span className="status draft">draft</span> :  <span className="status conducted">conducted</span> )}
 				<Form.Group className="mb-3" controlId="pollName">
 					<Form.Label>Poll Name</Form.Label>
 					<Form.Control
@@ -348,32 +484,51 @@ export const ManagePoll = () => {
 				)}
 
 				<Form.Group className="mb-3" controlId="pollStatus">
-					<Form.Label>Poll Actions: &nbsp;&nbsp;</Form.Label>
-					<button className="btn btn-outline-danger managePollBtn">
-						DISCARD POLL
-					</button>{" "}
-					<button className="btn btn-primary managePollBtn">
-						GO LIVE
-					</button>
+					<Form.Label>Poll Options: &nbsp;&nbsp;</Form.Label>
+					<DisplayOptions pstatus={poll.data.pollStatus}/>
 				</Form.Group>
 
+				<Form.Group className="mb-3" controlId="pollStatus">
+					<Form.Label>Poll Actions: &nbsp;&nbsp;</Form.Label>
+					<div className="row">
+						<div className="col-sm">
+							<button
+								className="btn btn-outline-danger managePollBtn"
+								onClick={(e) => {
+									e.preventDefault();
+									setStatusType(3);
+								}}>
+								DISCARD POLL
+							</button>
+						</div>{" "}
+						{((poll.data.pollStatus === "1" )&& !poll.data.customStartDate) ? (
+							<div className="col-sm">
+								<button
+									className="btn btn-success managePollBtn"
+									onClick={(e) => {
+										e.preventDefault();
+										setStatusType(1);
+									}}>
+									GO LIVE
+								</button>
+							</div>
+						) : (
+							""
+						)}
+					</div>
+				</Form.Group>
+{["0","1"].includes(poll.data.pollStatus) ? 
 				<Form.Group className="mb-3" controlId="pollSave">
 					<button
-						className="btn btn-success managePollBtn"
+						className="btn btn-primary managePollBtn"
 						onClick={saveChanges}>
-						Save Changes
+						{"Save Changes".toUpperCase()}
 					</button>
-				</Form.Group>
+				</Form.Group> : ''}
 				{/* */}
 			</Form>
 
-			<DisplayOptions />
-			<button
-				onClick={() =>
-					navigate("/manage/option/add?pid=" + poll.data.pollId)
-				}>
-				Add Options
-			</button>
+			{/* <DisplayOptions /> */}
 		</div>
 	);
 };

@@ -1,0 +1,8 @@
+button[disabled] {
+    background-color: grey;
+}
+
+button[disabled]:hover {
+    background-color: grey;
+    cursor: not-allowed;
+}

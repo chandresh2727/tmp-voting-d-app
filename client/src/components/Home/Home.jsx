@@ -53,10 +53,6 @@ export const Home = () => {
 					</Toast.Body>
 				</Toast>
 			) : (
-				// <Alert variant="danger">
-				// 	{" "}
-				// 	{decodeURIComponent(getUrlVars()["msg"])}
-				// </Alert>
 				""
 			)}
 			</div>

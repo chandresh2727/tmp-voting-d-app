@@ -27,22 +27,24 @@ contract Voting {
     mapping(address => string[]) public user2voteMap;
 
     struct Option {
+        string pollId;
         string optionId; // opt prefix with random string
         string optionName; // gifu
-        bool isUser; // gifu get it from user andif user
-        address optionAddress; // gifu if user is true thn ; default 0x000 | walletAdress of the Candidate
-        string imageUrl; // gifu if true store the url else store "N/A"
-        uint stakeAmount; // gifu and if poll type is metered else 0.0
-        address tokenAddress; // gifu and if poll type is metered else 0x0000
-        uint votePrice; // 1 vote will cost 5 rights??
-        string optionMessage; // gifu just for bystand; the political party's message
-        string hostId; // the hostId of the poll Host
+        string optionDescription;
+        // bool isUser; // gifu get it from user andif user
+        // address optionAddress; // gifu if user is true thn ; default 0x000 | walletAdress of the Candidate
+        // string imageUrl; // gifu if true store the url else store "N/A"
+        // uint stakeAmount; // gifu and if poll type is metered else 0.0
+        // address tokenAddress; // gifu and if poll type is metered else 0x0000
+        // uint votePrice; // 1 vote will cost 5 rights??
+       // gifu just for bystand; the political party's message
+        // string hostId; // the hostId of the poll Host
     }
 
     struct User {
         address walletAddress;
         string hostId;
-        string voterId;
+        string voterId; 
         string[] pollId;
         string[] votes;
     }
@@ -250,7 +252,6 @@ contract Voting {
 
     // function createPoll(string memory _pollName, string memory _pollDescription,string memory _pollType, address _tokenAddr, uint _tokenAmount, bool _customStartDate, bool _customEndDate, uint _pollStartDate, uint _pollEndDate, address _user, uint _nonce, uint8 _v, bytes32 _r, bytes32 _s) public returns(bool) {
     event evCreatePoll(string _pollId);
-
     function createPoll(
         Poll memory poll,
         PollTime memory pollTime,
@@ -331,11 +332,20 @@ contract Voting {
         return _pollTimeList;
     }
 
+    function isPollLive(string memory _pid) public returns (bool) {
+        checkPollValidity(_pid);
+        if(pollsMap[_pid].pollStatus== PollStatus.LIVE) {
+            return true;
+        }
+        return false;
+    }
+
     // no need for event emitter as we only are only reading
     function fetchPollOptions(
         string memory _pid
     ) public view returns (Option[] memory) {
         require(pollIdMap[_pid] != address(0), "No Poll Found");
+         require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll is DISCARDED");
         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         uint arrlen = optionIdMap[_pid].length;
         Option[] memory _optionList = new Option[](arrlen);
@@ -347,20 +357,19 @@ contract Voting {
 
     event evAddPollOption(bool added);
 
+//WORKING
     function addPollOption(
-        string memory _pid,
         Option memory _option,
         bytes32 _hash,
         bytes32 _r,
         bytes32 _s,
         uint8 _v
     ) public returns (bool) {
-        require(pollIdMap[_pid] != address(0), "No Poll Found");
-        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
+        require(pollIdMap[_option.pollId] != address(0), "No Poll Found");
+        require(pollIdMap[_option.pollId] == msg.sender, "User Not Authenticated");
         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
         _option.optionId = _generateId("oid");
-
-        optionIdMap[_pid].push(_option.optionId);
+        optionIdMap[_option.pollId].push(_option.optionId);
         optionMap[_option.optionId] = _option;
         emit evAddPollOption(true);
         return true;
@@ -404,6 +413,22 @@ contract Voting {
         return false;
     }
 
+    function checkPollValidity (string memory _pid) private returns(bool) {
+        if (pollTimesMap[_pid].customStartDate && pollsMap[_pid].pollStatus == PollStatus.DRAFT) {
+            if((pollTimesMap[_pid].pollStartDate/1000) < int(block.timestamp)) {
+                pollsMap[_pid].pollStatus = PollStatus.LIVE;
+            }
+        }
+
+          if (pollTimesMap[_pid].customEndDate && (pollsMap[_pid].pollStatus == PollStatus.LIVE || pollsMap[_pid].pollStatus == PollStatus.DRAFT)) {
+            if((pollTimesMap[_pid].pollEndDate/1000) < int(block.timestamp)) {
+                pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
+            }
+        }
+
+        return true;
+    }
+
     event evModifyPollOption(bool deleted);
 
     function modifyPollOption(
@@ -414,6 +439,7 @@ contract Voting {
         bytes32 _s,
         uint8 _v
     ) public returns (bool) {
+        checkPollValidity(_pid);
         require(pollIdMap[_pid] != address(0), "No Poll Found");
         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         require(optionIdMap[_pid].length != 0, "No options found");
@@ -444,6 +470,8 @@ contract Voting {
     }
 
     function getPollDetails(string memory _pid) public returns (Poll memory) {
+        checkPollValidity(_pid);
+         require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll is DISCARDED");
         if (pollTimesMap[_pid].customEndDate) {
             if (!(int(block.timestamp) < pollTimesMap[_pid].pollEndDate)) {
                 if (pollsMap[_pid].pollStatus == PollStatus.LIVE) {
@@ -464,9 +492,55 @@ contract Voting {
         bytes32 _s,
         uint8 _v
     ) public returns (bool) {
+        checkPollValidity(_poll.pollId);
         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
+        if (
+            pollsMap[_poll.pollId].pollStatus == PollStatus.DISCARDED ||
+            pollsMap[_poll.pollId].pollStatus == PollStatus.CONDUCTED
+        ) {
+            emit evUpdatePoll(false);
+            return false;
+        }
         pollsMap[_poll.pollId] = _poll;
         emit evUpdatePoll(true);
+        return true;
+    }
+
+    event evUpdatePollStatus(bool successfull);
+
+    function updatePollStatus(
+        string memory _pid,
+        PollStatus _pollStatus,
+        bytes32 _hash,
+        bytes memory _signature,
+        bytes32 _r,
+        bytes32 _s,
+        uint8 _v
+    ) public returns (bool) {
+        checkPollValidity(_pid);
+        require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
+        if(pollsMap[_pid].pollStatus == PollStatus.DISCARDED) {
+            emit evUpdatePollStatus(false);
+            return false;
+        }
+        if(_pollStatus == PollStatus.DISCARDED) {
+             delete pollsMap[_pid];
+             delete pollTimesMap[_pid];
+             pollIdMap[_pid] = address(0x0);
+             for (uint8 c = 0; c < polls[msg.sender].length;c++) {
+                
+                if (keccak256(abi.encodePacked(polls[msg.sender][c])) == keccak256(abi.encodePacked(_pid))) {
+                    if (c < polls[msg.sender].length) {
+                        polls[msg.sender][c] = polls[msg.sender][polls[msg.sender].length-1];
+                    }
+                    polls[msg.sender].pop();
+                }
+             }
+        } else {
+            pollsMap[_pid].pollStatus = _pollStatus;
+        }
+        
+        emit evUpdatePollStatus(true);
         return true;
     }
 
@@ -491,6 +565,7 @@ contract Voting {
     function getPollTimeDetails(
         string memory _pid
     ) public view returns (PollTime memory) {
+        require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll is DISCARDED");
         return pollTimesMap[_pid];
     }
 

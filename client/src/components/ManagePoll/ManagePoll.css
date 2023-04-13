@@ -25,10 +25,32 @@
     cursor: not-allowed;
 }
 
+.status{
+    position: unset;
+    float: right;
+    background: white;
+    padding: 1px 15px;
+    border-radius: 25px;
+    font-size: 72%;
+    font-family: monospace;
+    text-transform: uppercase;
+}
+
+.status.live {
+    color: green;
+    border: 1px solid green;
+}
+
+.status.draft, .status.conducted {
+    color: grey;
+    border: 1px solid grey;
+}
+
 .managePollBtn{
     border-radius: 7px !important;
     font-size: 2rem !important;
     padding: auto 2% !important;
+    width: 100%;
 }
 .fakeBtn{
     padding: 5px 10px;
