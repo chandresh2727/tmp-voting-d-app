@@ -8,12 +8,15 @@ import { getUrlVars, getRPCErrorMessage } from "../../Handlers/utils";
 // import {textAreaIterator, excelIterator, jsonIterator} from '../../Handlers/iteratorHandler'
 // import React, { useReducer, useCallback } from "react";
 // var ethers = require('ethers');
+import { useNavigate } from "react-router-dom";
 
 export const AddOption = () => {
 	const web3 = new Web3(Web3.givenProvider || "ws://localhost:7545");
+	const navigate = useNavigate();
 	const {
 		state: { accounts, contract },
 	} = useEth();
+	console.log(window.location.href, "add option jsx")
 
 	// const [isUser, setIsUser] =  useState(false)
 	const [optionDetails, setOptionDetails] = useState({
@@ -36,7 +39,7 @@ export const AddOption = () => {
 			return await contract?.methods.isPollLive(getUrlVars()["pid"]).call({from: accounts[0]})
 		}
 		isPollLive().then(d => {
-if (d) return window.location.href = `/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=1&msg=You cannot add an option after the poll is live!`
+if (d) return navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=1&msg=You cannot add an option after the poll is live!`)
 		}).catch((e) => console.log('Addoption.jsx -> isPollLive().catch() ', e ))
 
 
@@ -46,14 +49,14 @@ if (d) return window.location.href = `/manage/poll/modify?pid=${getUrlVars()["pi
 			if (e.toString().includes(commString)) {
 				let emsg = getRPCErrorMessage(e);
 				console.log("----ManagePoll.jsx----", emsg);
-				window.location.href = "/?error=1&msg=poll not FOUND";
+				navigate("/?error=1&msg=" + emsg);
 			} else {
 				// alert("unknown error occured");
 				console.log("addoptionjsx ->getpolldetails().catch()");
 				throw new Error(e);
 			}
 		});
-	}, [contract, accounts])
+	}, [contract, accounts, navigate])
 
 	const handleAddOptionSubmit = async (event) => {
 		event.preventDefault()
@@ -64,18 +67,21 @@ if (d) return window.location.href = `/manage/poll/modify?pid=${getUrlVars()["pi
 			.sign(hash, accounts[0])
 			.catch((e) => {
 				console.log(e);
-			});
+			})
 		let r = signature.slice(0, 66);
 		let s = "0x" + signature.slice(66, 130);
 		let v = parseInt(signature.slice(130, 132), 16);
-		let value = await contract.methods.addPollOption(optionDetails, hash, r, s, v).send({ from: accounts[0] });
+		let value = await contract.methods.addPollOption(optionDetails, hash, r, s, v).send({ from: accounts[0] }).catch((e) => {
+			console.log(e);
+			alert("user cancelled the heheh status change", "hh");
+		});
 		let a = await value.events["evAddPollOption"].returnValues["added"];
 		console.log("evAddPollOption", a);
 		if (a) {
-			window.location.href = `/manage/poll/modify?pid=${getUrlVars()["pid"]}&success=true&msg=option added successfully`
+			navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&success=true&msg=option added successfully`)
 		} else {
 			console.log(a)
-			window.location.href = `/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=true&msg=there was some issue adding option`
+			navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=true&msg=there was some issue adding option`)
 		}
 	}
 

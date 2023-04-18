@@ -1,0 +1,7 @@
+.filterEffect:hover{ 
+    filter: hue-rotate(20deg);
+}
+
+.filterEffect:active {
+    filter: hue-rotate(-25deg);
+}

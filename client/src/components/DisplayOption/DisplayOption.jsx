@@ -3,14 +3,15 @@ import useEth from "../../contexts/EthContext/useEth";
 import { useEffect, useState } from "react";
 import { getUrlVars, getRPCErrorMessage } from "../../Handlers/utils";
 import "./DisplayOption.css";
-import { FaEdit } from "react-icons/fa";
+import { HiEye, HiTrash } from "react-icons/hi";
 import {RiAddCircleLine} from "react-icons/ri"
 import ListGroup from "react-bootstrap/ListGroup";
 import Badge from "react-bootstrap/Badge";
 import Spinner from "react-bootstrap/Spinner";
-import { useNavigate, } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export const DisplayOptions = (pstatus) => {
+	console.log(window.location.href, "display optio jsx")
 	const navigate = useNavigate();
 	const {
 		state: { accounts, contract },
@@ -37,7 +38,7 @@ export const DisplayOptions = (pstatus) => {
 				if (e.toString().includes(commString)) {
 					let emsg = getRPCErrorMessage(e);
 					console.log("----ManagePoll.jsx----", emsg);
-					window.location.href = "/?error=1&msg=" + emsg;
+					navigate("/?error=1&msg=" + emsg)
 				} else {
 					console.log(
 						"displayoption.jsx ->fetchPollOptions().catch()"
@@ -46,7 +47,7 @@ export const DisplayOptions = (pstatus) => {
 					throw new Error(e);
 				}
 			});
-	}, [accounts, contract]);
+	}, [accounts, contract, navigate]);
 
 	return (
 		<div>
@@ -66,14 +67,8 @@ export const DisplayOptions = (pstatus) => {
 					</button>
 				) : (
 					<>
-					{["0","1"].includes(pstatus) ? <button className="btn btn-secondary managePollBtn"
-							onClick={() =>
-								navigate(
-									"/manage/option/add?pid=" + getUrlVars()["pid"]
-								)
-							}>
-							 <RiAddCircleLine  color="white" /> {"Create a new option".toUpperCase()}
-						</button> : "You Cannot Add Options After Poll End"}
+					{/* {alert([pstatus.pstatus])} */}
+					
 					<ListGroup as="ol" numbered>
 						{pollOptions?.data?.map(function (pollOptionsdata, ind) {
 							return (
@@ -97,18 +92,26 @@ export const DisplayOptions = (pstatus) => {
 											&nbsp;&nbsp;
 										</div>
 									</div>
-									<Badge
+								<span className="iconGroup">	<Badge
 										bg="primary curpo"
 										pill
-										title="manage"
-										onClick={() =>
-											navigate(
-												"/manage/option/modify?pid=" +
-													pollOptionsdata.optionId
-											)
+										title="view"
+										onClick={() =>{
+											console.log(window.location.href, "clicked here at display option")
+											navigate(`/manage/option/view?oid=${pollOptionsdata.optionId}&pid=${getUrlVars()['pid']}`)
+										}
 										}>
-										<FaEdit />
+										<HiEye />
 									</Badge>
+									<Badge
+										bg="danger curpo"
+										pill
+										title="remove"
+										onClick={() =>
+											navigate(`/manage/option/remove?oid=${pollOptionsdata.optionId}&pid=${getUrlVars()['pid']}`)
+										}>
+										<HiTrash />
+										</Badge></span>
 								</ListGroup.Item>
 							);
 						})}

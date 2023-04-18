@@ -345,12 +345,13 @@ contract Voting {
         string memory _pid
     ) public view returns (Option[] memory) {
         require(pollIdMap[_pid] != address(0), "No Poll Found");
-         require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll is DISCARDED");
+        require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll not Found!");
         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         uint arrlen = optionIdMap[_pid].length;
         Option[] memory _optionList = new Option[](arrlen);
         for (uint8 i = 0; i < optionIdMap[_pid].length; i++) {
-            _optionList[i] = optionMap[optionIdMap[_pid][i]];
+            if (keccak256(abi.encodePacked(optionMap[optionIdMap[_pid][i]].optionId)) != keccak256(abi.encodePacked(""))) {
+                _optionList[i] = optionMap[optionIdMap[_pid][i]];}
         }
         return _optionList;
     }
@@ -371,8 +372,17 @@ contract Voting {
         _option.optionId = _generateId("oid");
         optionIdMap[_option.pollId].push(_option.optionId);
         optionMap[_option.optionId] = _option;
+        pollsMap[_option.pollId].options.push(_option.optionId);
         emit evAddPollOption(true);
         return true;
+    }
+
+    function fetchOptionById(string memory _pid, string memory _oid) public view returns (Option memory) {
+        require(pollIdMap[_pid] != address(0), "No Poll Found");
+        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
+        require(keccak256(abi.encodePacked(optionMap[_oid].optionId)) != keccak256(abi.encodePacked("")), "No Option Found");
+
+        return optionMap[_oid];
     }
 
     event evRemovePollOptions(bool deleted);
@@ -398,12 +408,29 @@ contract Voting {
         bytes32 targetHash = keccak256(bytes(_oid));
         if (oidHash == targetHash) {
             delete optionMap[_oid];
+            // to remove from mapping  (pollid -> list of options)
             for (uint8 i = 0; i < optionIdMap[_pid].length; i++) {
                 if (
                     keccak256(abi.encodePacked(optionIdMap[_pid][i])) ==
                     keccak256(abi.encodePacked(_oid))
                 ) {
-                    delete optionIdMap[_pid][i];
+                    if (i <  optionIdMap[_pid].length) {
+                       optionIdMap[_pid][i] = optionIdMap[_pid][ optionIdMap[_pid].length - 1];
+                    }
+                    optionIdMap[_pid].pop();
+                }
+            }
+            // to remove from POLL struct
+             for (uint8 i = 0; i < pollsMap[_pid].options.length; i++) {
+                if (
+                    keccak256(abi.encodePacked( pollsMap[_pid].options[i])) ==
+                    keccak256(abi.encodePacked(_oid))
+                ) {
+                    if (i <   pollsMap[_pid].options.length) {
+                        pollsMap[_pid].options[i] =  pollsMap[_pid].options[ pollsMap[_pid].options.length - 1];
+                    }
+                     pollsMap[_pid].options.pop();
+                    // delete  pollsMap[_pid].options[i];
                 }
             }
             emit evRemovePollOptions(true);
@@ -431,6 +458,8 @@ contract Voting {
 
     event evModifyPollOption(bool deleted);
 
+
+    
     function modifyPollOption(
         string memory _pid,
         Option memory _option,
@@ -471,15 +500,25 @@ contract Voting {
 
     function getPollDetails(string memory _pid) public returns (Poll memory) {
         checkPollValidity(_pid);
-         require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll is DISCARDED");
+        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
+        require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll not Found!");
+        Poll memory _poll = pollsMap[_pid];
+
         if (pollTimesMap[_pid].customEndDate) {
             if (!(int(block.timestamp) < pollTimesMap[_pid].pollEndDate)) {
-                if (pollsMap[_pid].pollStatus == PollStatus.LIVE) {
-                    pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
+                if (_poll.pollStatus == PollStatus.LIVE) {
+                    _poll.pollStatus = PollStatus.CONDUCTED;
                 }
             }
         }
-        return pollsMap[_pid];
+
+        if(pollTimesMap[_pid].customStartDate && _poll.pollStatus == PollStatus.DRAFT) {
+            if(pollTimesMap[_pid].pollStartDate < int(block.timestamp)) {
+                _poll.pollStatus = PollStatus.LIVE;
+            }
+        }
+
+        return _poll;
     }
 
     event evUpdatePoll(bool successfull);
@@ -565,7 +604,7 @@ contract Voting {
     function getPollTimeDetails(
         string memory _pid
     ) public view returns (PollTime memory) {
-        require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll is DISCARDED");
+        require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll not Found!");
         return pollTimesMap[_pid];
     }
 

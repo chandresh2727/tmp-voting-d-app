@@ -4,8 +4,10 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import {ManagePoll} from "./components/ManagePoll/ManagePoll";
 import {Home} from "./components/Home/Home";
 import {Navbar} from "./components/Navbar/Navbar";
-import {RedirectToHome} from "./components/RedirectToHome/RedirectToHome";
+// import {RedirectToHome} from "./components/RedirectToHome/RedirectToHome";
 import { AddOption } from "./components/AddOption/AddOption"; 
+import { ViewOption } from "./components/ViewOption/ViewOption";
+import { RemoveOption } from "./components/RemoveOption/RemoveOption";
 // import Intro from "./components/Intro/";
 // import Setup from "./components/Setup";
 // import Demo from "./components/Demo";
@@ -24,7 +26,8 @@ function App() {
 								<Route path="option" >
 									{/* <Route index element={<RedirectToHome/>} /> */}
 									<Route path="add" element={<AddOption />} />
-									<Route path="modify" element={<ManagePoll />} />
+									<Route path="view" element={<ViewOption />} />
+									<Route path="remove" element={<RemoveOption />} />
 								</Route>
 								<Route path="/manage/poll/modify" element={<ManagePoll />} />
 							</Route>

@@ -1,0 +1,37 @@
+.loading::after {
+    display: inline-block;
+    animation: dotty steps(1,end) 1s infinite;
+    content: '';
+  }
+  
+  @keyframes dotty {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+  }
+
+  .loading {
+    text-transform: uppercase;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .managePollBtn2{
+    border-radius: 7px !important;
+    font-size: 2.787rem !important;
+    padding: auto 5% !important;
+    width: max-content;
+    height: auto;
+}
+
+.dblock{
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  text-transform: uppercase;
+  color: crimson;
+}

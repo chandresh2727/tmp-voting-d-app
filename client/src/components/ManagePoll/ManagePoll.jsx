@@ -5,13 +5,11 @@ import { getUrlVars, getRPCErrorMessage } from "../../Handlers/utils";
 import { DisplayOptions } from "../DisplayOption/DisplayOption";
 import Form from "react-bootstrap/Form";
 import Toast from "react-bootstrap/Toast";
+import {RiAddCircleLine} from 'react-icons/ri'
 import Web3 from "web3";
 import {
 	textAreaIterator,
-	excelIterator,
-	jsonIterator,
 } from "../../Handlers/iteratorHandler";
-import { AddOption } from "../AddOption/AddOption";
 import "./ManagePoll.css";
 import { useNavigate } from "react-router-dom";
 
@@ -22,13 +20,8 @@ export const ManagePoll = () => {
 	} = useEth();
 	const placeholerVal = "Loading...";
 	const [addressListChanged, setAddressListChanged] = useState(false);
-	const [rawAddressList, setRawAddressList] = useState("Loading");
+	const [rawAddressList, setRawAddressList] = useState("Loading...");
 	const [statusType, setStatusType] = useState(0);
-	// console.log(message)
-	// const [message, setMessage] = useState({
-	// 	new: false,
-	// 	msg: "",
-	// });
 	const [showSuccessMsg, setShowSuccessMsg] = useState(false)
 	console.log(showSuccessMsg)
 	const [poll, setPoll] = useState({
@@ -56,33 +49,19 @@ export const ManagePoll = () => {
 			pollEndDate: 0,
 		},
 	});
-
+	const [showErr, setShowError] = useState(0)
+	
 	const navigate = useNavigate();
 	useEffect(() => {
 		let _pollId = getUrlVars()["pid"];
 		if (!_pollId) {
-			window.location.href = "/?error=1&msg=provide a valid poll id";
+			navigate('/?error=1&msg=provide a valid poll id')
 		}
-		contract?.methods
-			.fetchPollOptions(_pollId)
-			.call({ from: accounts[0] })
-			.then((d) => console.log(d))
-			.catch((e) => {
-				let commString =
-					"VM Exception while processing transaction: revert ";
-				if (e.toString().includes(commString)) {
-					let emsg = getRPCErrorMessage(e);
-					console.log("----ManagePoll.jsx----", emsg);
-					window.location.href = "/?error=1&msg=" + emsg;
-				} else {
-					alert("unknown error occured");
-					throw new Error(e);
-				}
-			});
+	}, [contract, accounts, navigate]);
 
-		console.log("hi");
-	}, [contract, accounts]);
-
+	if(getUrlVars()['error'] && showErr === 0) {
+		setShowError(1)
+	}
 	const handleCompile = (rawInput) => {
 		let filteredAddress = Array.from(
 			new Set(textAreaIterator(rawInput, (e) => e))
@@ -136,7 +115,8 @@ export const ManagePoll = () => {
 				if (e.toString().includes(commString)) {
 					let emsg = getRPCErrorMessage(e);
 					console.log("----ManagePoll.jsx----", emsg);
-					window.location.href = "/?error=1&msg=" + emsg;
+					navigate('/?error=1&msg=' + emsg)
+					// window.location.href = "/?error=1&msg=" + emsg;
 				} else {
 					// alert("unknown error occured");
 					console.log("managepolljsx ->getpolldetails().catch()");
@@ -162,14 +142,15 @@ export const ManagePoll = () => {
 				if (e.toString().includes(commString)) {
 					let emsg = getRPCErrorMessage(e);
 					console.log("----ManagePoll.jsx----", emsg);
-					window.location.href = "/?error=1&msg=" + emsg;
+					navigate('/?error=1&msg=' + emsg)
+					// window.location.href = "/?error=1&msg=" + emsg;
 				} else {
 					console.log("managepolljsx ->getPollTimeDetails().catch()");
 					// alert("unknown error occured");
 					throw new Error(e);
 				}
 			});
-	}, [contract, accounts, poll.fetched,]);
+	}, [contract, accounts, poll.fetched,navigate]);
 
 	const pollTypeEnum = {
 		0: "PUBLIC",
@@ -183,7 +164,11 @@ export const ManagePoll = () => {
 		2: "CONDUCTED",
 		3: "DISCARDED",
 	};
-
+	const displayErrMsg = () => {
+		setShowError(1)
+		setTimeout(()=>setShowError(0),5000)
+	}
+	console.log(window.location.href, "manage poll jsx")
 	useEffect(() => {
 
 		const changeStatus = async (ind) => {
@@ -219,7 +204,7 @@ export const ManagePoll = () => {
 			];
 			console.log("yaha pe hu12eQer32qQ@#4rq3$RQ#$Q#@Q@ =>  ", a);
 			if (a) {
-				window.location.reload();
+				setPoll({...poll, fetched: false})
 			} else {
 				alert("something went wrong!");
 			}
@@ -232,8 +217,9 @@ export const ManagePoll = () => {
 			return alert("please compile addressess");
 		}
 		if (poll.data.addressList.length === 0) {
-			return alert("please add at least 1 address");
+			return alert("please add atleast 1 address");
 		}
+		
 		let hash = web3.utils.sha3(JSON.stringify(poll.data));
 		let signature = await web3.eth.personal
 			.sign(hash, accounts[0])
@@ -268,9 +254,37 @@ export const ManagePoll = () => {
 		}
 	};
 
+	const prepareGoLIVE = async() => {
+		if (!contract && !contract.methods) return;
+		let value = await contract?.methods
+			.fetchPollOptions(getUrlVars()['pid'])
+			.call({ from: accounts[0] })
+			.then((d) => d)
+			.catch((e) => {
+				let commString =
+					"VM Exception while processing transaction: revert ";
+				if (e.toString().includes(commString)) {
+					let emsg = getRPCErrorMessage(e);
+					console.log("----ManagePoll.jsx----", emsg);
+					navigate('/?error=1&msg=' + emsg)
+					// window.location.href = "/?error=1&msg=" + emsg;
+				} else {
+					alert("unknown error occured");
+					throw new Error(e);
+				}
+			});
+		// if )
+		if (value.length < 2) {
+			displayErrMsg()
+			navigate(`?pid=${getUrlVars()['pid']}&error=1&msg="Add Atleast 2 options before going live"`)
+		} else setStatusType(1);
+	}
+
+
+
 	return (
 		<div className="artificialContainer">
-			<div className="fadeOut">
+			<div className={showErr ? "fadeOut": 'hide'}>
 				{getUrlVars()["error"] ? (
 					<Toast
 						className="lg-toast"
@@ -303,7 +317,7 @@ export const ManagePoll = () => {
 					""
 				)}
 			</div>
-			<div className={showSuccessMsg ? 'fadeOut' : ''}>
+			<div className={showSuccessMsg ? 'fadeOut' : 'hide'}>
 			{showSuccessMsg ? (
 					<Toast
 						className="lg-toast"
@@ -484,7 +498,14 @@ export const ManagePoll = () => {
 				)}
 
 				<Form.Group className="mb-3" controlId="pollStatus">
-					<Form.Label>Poll Options: &nbsp;&nbsp;</Form.Label>
+					<Form.Label><span className="d-flex align-items-center"><span>Poll Options: &nbsp;&nbsp;</span> {["0","1"].includes(poll.data.pollStatus) ? <span><button className="btn btn-secondary managePollBtn"
+							onClick={() =>
+								navigate(
+									"/manage/option/add?pid=" + getUrlVars()["pid"]
+								)
+							}>
+							 <RiAddCircleLine  color="white" /> {"Create a new option".toUpperCase()}
+						</button></span> : <span style={{color: "dimgrey"}}>{"You Cannot Add Options Once The Poll Has Ended".toUpperCase()}</span>}</span></Form.Label>
 					<DisplayOptions pstatus={poll.data.pollStatus}/>
 				</Form.Group>
 
@@ -501,13 +522,13 @@ export const ManagePoll = () => {
 								DISCARD POLL
 							</button>
 						</div>{" "}
-						{((poll.data.pollStatus === "1" )&& !poll.data.customStartDate) ? (
+						{((poll.data.pollStatus === "0" )&& !pollTime.data.customStartDate) ? (
 							<div className="col-sm">
 								<button
 									className="btn btn-success managePollBtn"
 									onClick={(e) => {
 										e.preventDefault();
-										setStatusType(1);
+										prepareGoLIVE()
 									}}>
 									GO LIVE
 								</button>

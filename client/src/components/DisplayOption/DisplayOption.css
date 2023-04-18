@@ -6,3 +6,9 @@ button[disabled]:hover {
     background-color: grey;
     cursor: not-allowed;
 }
+
+.iconGroup{    
+    display: flex;
+    justify-content: space-between;
+    width: 9%;
+}
