@@ -80,7 +80,7 @@ export const ManagePoll = () => {
 	useEffect(() => {
 		const getPollDetails = async () => {
 			return await contract?.methods
-				.getPollDetails(getUrlVars()["pid"])
+				.getVerifiedPoll(getUrlVars()["pid"], Math.floor(Date.now()/1000))
 				.call({ from: accounts[0] });
 		};
 		const getPollTimeDetails = async () => {

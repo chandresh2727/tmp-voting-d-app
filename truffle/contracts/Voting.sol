@@ -498,30 +498,88 @@ contract Voting {
         return usersMap[address(msg.sender)];
     }
 
-    function getPollDetails(string memory _pid) public returns (Poll memory) {
-        checkPollValidity(_pid);
-        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
-        require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll not Found!");
-        Poll memory _poll = pollsMap[_pid];
+     function getVerifiedPoll(string memory _pid, int _currtime) public returns (Poll memory) {
+        require(pollIdMap[_pid] != address(0), "No Poll Found");
+        require(pollsMap[_pid].pollStatus != PollStatus.CONDUCTED, "Poll Has Ended!");
+        require(pollsMap[_pid].pollStatus != PollStatus.DISCARDED, "No Poll Found!");
 
-        if (pollTimesMap[_pid].customEndDate) {
-            if (!(int(block.timestamp) < pollTimesMap[_pid].pollEndDate)) {
-                if (_poll.pollStatus == PollStatus.LIVE) {
-                    _poll.pollStatus = PollStatus.CONDUCTED;
+        PollStatus ps = pollsMap[_pid].pollStatus;
+        // PollStatus ps = PollStatus.CONDUCTED;
+
+        // if (pollTimesMap[_pid].customStartDate && pollsMap[_pid].pollStatus == PollStatus.DRAFT) {
+        //     if((pollTimesMap[_pid].pollStartDate/1000) < int(block.timestamp)) {
+        //         pollsMap[_pid].pollStatus = PollStatus.LIVE;
+        //     }
+        // }
+
+        //   if (pollTimesMap[_pid].customEndDate && (pollsMap[_pid].pollStatus == PollStatus.LIVE || pollsMap[_pid].pollStatus == PollStatus.DRAFT)) {
+        //     if((pollTimesMap[_pid].pollEndDate/1000) < int(block.timestamp)) {
+        //         pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
+        //     }
+        // }
+
+        // NEED TO DIVIDE by 1000 FOR EPOCH SECONDS
+        if(pollTimesMap[_pid].customStartDate){
+            if(_currtime > (pollTimesMap[_pid].pollStartDate/1000)) {
+                ps = PollStatus.LIVE;
+            }
+        }
+
+        // check the poll time -> if it has ended or not
+        // if it is ended and the pollStatus is still in pollstatus that is not PollStatus.CONDUCTED then
+        // change pollsMap[_pid].pollStatus to CONDUCTED
+        // NOT VERIFYING POLL STATUS HERE AS WE ALREADY WROTE DOWN THEM IN REQUIRE()
+
+        if( pollTimesMap[_pid].customEndDate && ((pollTimesMap[_pid].pollEndDate/1000) < _currtime)) {
+            ps = PollStatus.CONDUCTED;
+        }
+        
+        // ps = PollStatus.LIVE;
+     
+        return Poll(
+            pollsMap[_pid].pollId,
+            pollsMap[_pid].pollName,
+            pollsMap[_pid].pollDescription,
+            pollsMap[_pid].pollType,
+            ps,
+            pollsMap[_pid].hostId,
+            pollsMap[_pid].walletAddress,
+            pollsMap[_pid].addressList,
+            pollsMap[_pid].tokenContractAddress,
+            pollsMap[_pid].tokenAmount,
+            pollsMap[_pid].options
+        );
+    }
+
+    // using timestamp from the user's side to know the current UTC epoch time
+    // block.timestamp returns the timestamp of the most recent block
+    function getPollDetails(string memory _pid, int _currtime) public returns (Poll memory) {
+        return getVerifiedPoll(_pid, _currtime);
+    }
+
+    function getPollDetailsForVoting(string memory _pid,  int _currtime) public returns (Poll memory) {
+        Poll memory _tmpPoll = getVerifiedPoll(_pid, _currtime);
+
+        // if it is private or metered then check if the user is on the list
+         if(_tmpPoll.pollType != PollType.PUBLIC) {
+            bool found = false;
+            for(uint8 i = 0; i < _tmpPoll.addressList.length; i++) {
+                if(msg.sender == _tmpPoll.addressList[i]) {
+                    found = true;
                 }
             }
+            require(found, "You are not permitted to vote on this poll");
         }
 
-        if(pollTimesMap[_pid].customStartDate && _poll.pollStatus == PollStatus.DRAFT) {
-            if(pollTimesMap[_pid].pollStartDate < int(block.timestamp)) {
-                _poll.pollStatus = PollStatus.LIVE;
-            }
-        }
-
-        return _poll;
+        require(_tmpPoll.pollStatus != PollStatus.CONDUCTED, "Poll Has Ended!");
+        require(_tmpPoll.pollStatus != PollStatus.DISCARDED, "No Poll Found!");
+        require(_tmpPoll.pollStatus == PollStatus.LIVE, "Poll has not started yet");
+        return _tmpPoll;
     }
 
     event evUpdatePoll(bool successfull);
+
+   
 
     function updatePoll(
         Poll memory _poll,
