@@ -6,6 +6,23 @@ html {
 
 body {padding:0 ;}
 
+body{
+  /* display: flex;
+  align-items: center;
+  justify-content: center; */
+  min-height: 100vh;
+  background: hsla(240, 80%, 66%, 1);
+
+  background: linear-gradient(225deg, hsla(240, 80%, 66%, 1) 0%, hsla(204, 95%, 62%, 1) 100%);
+  
+  background: -moz-linear-gradient(225deg, hsla(240, 80%, 66%, 1) 0%, hsla(204, 95%, 62%, 1) 100%);
+  
+  background: -webkit-linear-gradient(225deg, hsla(240, 80%, 66%, 1) 0%, hsla(204, 95%, 62%, 1) 100%);
+  
+  filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#6665EE", endColorstr="#43B1FA", GradientType=1 );
+  background-attachment: fixed;
+}
+
 * {
   margin: 0;
   padding: 0;

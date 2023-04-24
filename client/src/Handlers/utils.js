@@ -39,3 +39,24 @@ export const toIsoString = (date) => {
 		pad(Math.abs(tzo) % 60)
 	);
 };
+
+
+
+export const num2alpha =  num => {
+	
+var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+var result = ""
+    var charIndex = num % alphabet.length
+    var quotient = num/alphabet.length
+    if(charIndex-1 == -1){
+        charIndex = alphabet.length
+        quotient--;
+    }
+    result =  alphabet.charAt(charIndex-1) + result;
+    if(quotient>=1){
+        num2alpha(parseInt(quotient));
+    }else{
+       return result
+	}
+return result
+}

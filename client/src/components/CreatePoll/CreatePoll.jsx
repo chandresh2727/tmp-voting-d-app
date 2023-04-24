@@ -385,6 +385,7 @@ iii)Public - Anyone can vote just by connecting their account">
 				id="customStart"
 				name="customStart"
 				label="Custom Start Date ?"
+				className="datbtn"
 				checked={customDateObj.startDate.custom}
 				onChange={(e) =>
 					setCustomDateObj((obj) => ({
@@ -414,6 +415,7 @@ iii)Public - Anyone can vote just by connecting their account">
 
 					<Form.Check
 						type="datetime-local"
+		
 						id="startDate"
 						min={toIsoString(
 							new Date(moment().toLocaleString())
@@ -538,6 +540,7 @@ iii)Public - Anyone can vote just by connecting their account">
 				type="switch"
 				id="customEnd"
 				name="customEnd"
+				className="datbtn" 
 				label="Custom End Date ?"
 				checked={customDateObj.endDate.custom}
 				onChange={(e) =>

@@ -8,6 +8,7 @@ import {Navbar} from "./components/Navbar/Navbar";
 import { AddOption } from "./components/AddOption/AddOption"; 
 import { ViewOption } from "./components/ViewOption/ViewOption";
 import { RemoveOption } from "./components/RemoveOption/RemoveOption";
+import { Vote } from "./components/Vote/Vote";
 // import Intro from "./components/Intro/";
 // import Setup from "./components/Setup";
 // import Demo from "./components/Demo";
@@ -21,6 +22,7 @@ function App() {
 						<Navbar />
 						<Routes>
 							<Route path="/" element={<Home />} />
+							<Route path="/vote" element={<Vote/>} />
 							<Route path="/manage" >
 								{/* <Route index element={<RedirectToHome/>} /> */}
 								<Route path="option" >

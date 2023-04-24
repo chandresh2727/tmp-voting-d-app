@@ -3,12 +3,13 @@ import "../CreatePoll/CreatePoll.css";
 // import Web3 from "web3";
 import useEth from "../../contexts/EthContext/useEth";
 import "./Navbar.css";
-import { useLocation} from "react-router-dom"
+import { useLocation, useNavigate} from "react-router-dom"
 // import { useRoute } from '@react-navigation/native';
 import moment from "moment-timezone";
 
 
 export const Navbar = () => {
+	const navigate = useNavigate()
 	const {
 		state: { accounts, contract },
 	} = useEth();
@@ -48,19 +49,16 @@ export const Navbar = () => {
 	return (
 		<div className="Navbar">
 			<center>
-				<span>
-					Current Accoount: <b className="monospace"> {accounts} </b>
-				</span>
-				<span>
-					&nbsp;&nbsp;Host Id: <b className="monospace"> {hostid} </b>
-				</span>
-				<span>
-					&nbsp;&nbsp;Voter Id:{" "}
-					<b className="monospace"> {voterid} </b>
-				</span><br />
-				<span style={{color: "white", backgroundColor: "black", padding: "0.3% 0.5%", borderRadius: "5px", }}>
+				<div className="app-logo" onClick={()=>navigate("/")}>
+				SmartVote
+				</div>
+				<span className="value" style={{color: "white"}}>
   {currentTime}
 				</span>
+
+
+				<button className="glow-on-hover" type="button"><span className="artdot" style={accounts ? {backgroundColor: "green"} : {backgroundColor: "red"}}></span><span>&nbsp;</span><span>{accounts ? `${accounts[0]?.slice(0,6)}..${accounts[0]?.slice(-3)}` : '0x0000..000'}</span></button>
+
 			</center>
 		</div>
 	);

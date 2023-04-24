@@ -12,6 +12,7 @@ import {
 } from "../../Handlers/iteratorHandler";
 import "./ManagePoll.css";
 import { useNavigate } from "react-router-dom";
+import {VscError} from 'react-icons/vsc'
 
 export const ManagePoll = () => {
 	const web3 = new Web3(Web3.givenProvider || "ws://localhost:7545");
@@ -286,16 +287,17 @@ export const ManagePoll = () => {
 		<div className="artificialContainer">
 			<div className={showErr ? "fadeOut": 'hide'}>
 				{getUrlVars()["error"] ? (
-					<Toast
-						className="lg-toast"
-						bg={"danger"}
-						autohide={true}
-						delay={5000}>
-						<Toast.Header closeButton={false}>Error</Toast.Header>
-						<Toast.Body className="text-white">
-							{decodeURIComponent(getUrlVars()["msg"])}
-						</Toast.Body>
-					</Toast>
+				<Toast style={{background: "#ffb7b7", color: "black", border: "1.5px solid #d67c7c"}}
+				class="lg-toast"
+				// bg={"danger"}
+				autohide={true}
+				delay={5000}>
+			
+				<Toast.Body className="text-red" style={{fontSize: "2rem", fontFamily: "'Lexend', sans-serif", textTransform: "uppercase", display: "flex", justifyContent: "center" }}>
+					<VscError/>&nbsp;&nbsp;
+					{decodeURIComponent(getUrlVars()["msg"])}
+				</Toast.Body>
+			</Toast>
 				) : (
 					""
 				)}
@@ -303,13 +305,12 @@ export const ManagePoll = () => {
 
 			<div className="fadeOut">
 				{getUrlVars()["success"] ? (
-					<Toast
+					<Toast  style={{background: "#ffb7b7", color: "black", border: "1.5px solid limegreen"}}
 						className="lg-toast"
 						bg={"success"}
 						autohide={true}
 						delay={5000}>
-						<Toast.Header closeButton={false}>success</Toast.Header>
-						<Toast.Body className="text-white">
+						<Toast.Body className="text-white" style={{fontSize: "2rem", fontFamily: "'Lexend', sans-serif", textTransform: "uppercase", display: "flex", justifyContent: "center" }}>
 							{decodeURIComponent(getUrlVars()["msg"])}
 						</Toast.Body>
 					</Toast>
@@ -319,13 +320,12 @@ export const ManagePoll = () => {
 			</div>
 			<div className={showSuccessMsg ? 'fadeOut' : 'hide'}>
 			{showSuccessMsg ? (
-					<Toast
+					<Toast  style={{background: "#ffb7b7", color: "black", border: "1.5px solid limegreen"}}
 						className="lg-toast"
 						bg={"success"}
 						autohide={true}
 						delay={5000}>
-						<Toast.Header closeButton={false}>Success</Toast.Header>
-						<Toast.Body className="text-white">
+						<Toast.Body className="text-white" style={{fontSize: "2rem", fontFamily: "'Lexend', sans-serif", textTransform: "uppercase", display: "flex", justifyContent: "center" }}>
 							"Poll Updated Successfully"
 						</Toast.Body>
 					</Toast>
@@ -334,7 +334,7 @@ export const ManagePoll = () => {
 				)}
 			</div>
 			
-			<Form style={(poll.data.pollStatus === "1") ? {border: "1.5px solid green", boxShadow: "1px 1px 225px -60px green"}: {}}>
+			<Form style={(poll.data.pollStatus === "1") ? {"border":"1.5px solid #00ffad","boxShadow":"#006e53 1px 1px 74px 14px"}: {}}>
 			{poll.data.pollStatus === "1" ? <span className="status live">live</span> : (poll.data.pollStatus=== "0" ?  <span className="status draft">draft</span> :  <span className="status conducted">conducted</span> )}
 				<Form.Group className="mb-3" controlId="pollName">
 					<Form.Label>Poll Name</Form.Label>

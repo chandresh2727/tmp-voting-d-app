@@ -9,6 +9,7 @@ import Spinner from "react-bootstrap/Spinner";
 import ListGroup from "react-bootstrap/ListGroup";
 import Badge from "react-bootstrap/Badge";
 import Toast from "react-bootstrap/Toast";
+import {VscError} from 'react-icons/vsc'
 import "../CreatePoll/CreatePoll.css";
 import useEth from "../../contexts/EthContext/useEth";
 import { FaEdit } from "react-icons/fa";
@@ -40,15 +41,14 @@ export const Home = () => {
 		<div className="Home artificialContainer">
 			<div className="fadeOut">
 			{getUrlVars()["error"] ? (
-				<Toast
+				<Toast style={{background: "#ffb7b7", color: "black", border: "1.5px solid #d67c7c", width: "max-content"}}
 					class="lg-toast"
-					bg={"danger"}
+					// bg={"danger"}
 					autohide={true}
 					delay={5000}>
-					<Toast.Header closeButton={false}>
-						Error
-					</Toast.Header>
-					<Toast.Body className="text-white">
+				
+					<Toast.Body className="text-red" style={{fontSize: "2rem", fontFamily: "'Lexend', sans-serif", textTransform: "uppercase", display: "flex", justifyContent: "center" }}>
+						<VscError/>&nbsp;&nbsp;
 						{decodeURIComponent(getUrlVars()["msg"])}
 					</Toast.Body>
 				</Toast>
@@ -59,10 +59,7 @@ export const Home = () => {
 			<div className="participatePoll">
 				<Form
 					onSubmit={() =>
-						navigate({
-							pathname: "/vote",
-							search: `?${createSearchParams("pid", { pid2 })}`,
-						})
+						navigate(`/vote?pid=${pid2}`)
 					}>
 					<Form.Group className="mb-3" controlId="pollid">
 						<Form.Label>Participate in Poll</Form.Label>

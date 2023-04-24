@@ -346,7 +346,7 @@ contract Voting {
     ) public view returns (Option[] memory) {
         require(pollIdMap[_pid] != address(0), "No Poll Found");
         require(keccak256(abi.encodePacked(pollsMap[_pid].pollId)) != keccak256(abi.encodePacked("")), "Poll not Found!");
-        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
+        // require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         uint arrlen = optionIdMap[_pid].length;
         Option[] memory _optionList = new Option[](arrlen);
         for (uint8 i = 0; i < optionIdMap[_pid].length; i++) {
@@ -379,7 +379,7 @@ contract Voting {
 
     function fetchOptionById(string memory _pid, string memory _oid) public view returns (Option memory) {
         require(pollIdMap[_pid] != address(0), "No Poll Found");
-        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
+        // require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         require(keccak256(abi.encodePacked(optionMap[_oid].optionId)) != keccak256(abi.encodePacked("")), "No Option Found");
 
         return optionMap[_oid];
@@ -504,19 +504,6 @@ contract Voting {
         require(pollsMap[_pid].pollStatus != PollStatus.DISCARDED, "No Poll Found!");
 
         PollStatus ps = pollsMap[_pid].pollStatus;
-        // PollStatus ps = PollStatus.CONDUCTED;
-
-        // if (pollTimesMap[_pid].customStartDate && pollsMap[_pid].pollStatus == PollStatus.DRAFT) {
-        //     if((pollTimesMap[_pid].pollStartDate/1000) < int(block.timestamp)) {
-        //         pollsMap[_pid].pollStatus = PollStatus.LIVE;
-        //     }
-        // }
-
-        //   if (pollTimesMap[_pid].customEndDate && (pollsMap[_pid].pollStatus == PollStatus.LIVE || pollsMap[_pid].pollStatus == PollStatus.DRAFT)) {
-        //     if((pollTimesMap[_pid].pollEndDate/1000) < int(block.timestamp)) {
-        //         pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
-        //     }
-        // }
 
         // NEED TO DIVIDE by 1000 FOR EPOCH SECONDS
         if(pollTimesMap[_pid].customStartDate){
@@ -666,7 +653,7 @@ contract Voting {
         return pollTimesMap[_pid];
     }
 
-    event evCastVote(Vote addedVote, address castedBy, bool wasSuccessful);
+    event evCastVote(Vote addedVote, address castedBy, bool wasSuccessful, string message);
 
     function castVote(
         string memory _pid,
@@ -756,17 +743,15 @@ contract Voting {
                 break;
             }
         }
-        require(
-            !_hasUserAlreadyVoted,
-            "You have already casted a vote for this poll"
-        );
+
+        require(!_hasUserAlreadyVoted,"You have already casted a vote for this poll");
 
         string memory _vid = _generateId("vid");
 
         globalVoteMap[_vid] = Vote(_vid, _pid, msg.sender, _oid);
         poll2voteMap[_pid].push(_vid);
         user2voteMap[msg.sender].push(_vid);
-        emit evCastVote(globalVoteMap[_vid], msg.sender, true);
+        emit evCastVote(globalVoteMap[_vid], msg.sender, true, "success: vote has been casted");
         return true;
     }
 }
