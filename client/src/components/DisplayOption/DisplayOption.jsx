@@ -67,7 +67,6 @@ export const DisplayOptions = (pstatus) => {
 					</button>
 				) : (
 					<>
-					{/* {alert([pstatus.pstatus])} */}
 					
 					<ListGroup as="ol" numbered>
 						{pollOptions?.data?.map(function (pollOptionsdata, ind) {
@@ -92,18 +91,17 @@ export const DisplayOptions = (pstatus) => {
 											&nbsp;&nbsp;
 										</div>
 									</div>
-								<span className="iconGroup">	<Badge
+								<span className={pstatus.pstatus === "0"? "iconGroup" : "iconGroup justify-content-center"}>	<Badge
 										bg="primary curpo"
 										pill
 										title="view"
 										onClick={() =>{
-											console.log(window.location.href, "clicked here at display option")
 											navigate(`/manage/option/view?oid=${pollOptionsdata.optionId}&pid=${getUrlVars()['pid']}`)
 										}
 										}>
 										<HiEye />
 									</Badge>
-									<Badge
+								{pstatus.pstatus === "0"? <Badge
 										bg="danger curpo"
 										pill
 										title="remove"
@@ -111,7 +109,7 @@ export const DisplayOptions = (pstatus) => {
 											navigate(`/manage/option/remove?oid=${pollOptionsdata.optionId}&pid=${getUrlVars()['pid']}`)
 										}>
 										<HiTrash />
-										</Badge></span>
+										</Badge> : ""}	</span>
 								</ListGroup.Item>
 							);
 						})}

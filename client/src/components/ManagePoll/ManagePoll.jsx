@@ -13,6 +13,7 @@ import {
 import "./ManagePoll.css";
 import { useNavigate } from "react-router-dom";
 import {VscError} from 'react-icons/vsc'
+import { ShareButton } from "../ShareButton/ShareButton";
 
 export const ManagePoll = () => {
 	const web3 = new Web3(Web3.givenProvider || "ws://localhost:7545");
@@ -333,12 +334,12 @@ export const ManagePoll = () => {
 					""
 				)}
 			</div>
-			
 			<Form style={(poll.data.pollStatus === "1") ? {"border":"1.5px solid #00ffad","boxShadow":"#006e53 1px 1px 74px 14px"}: {}}>
 			{poll.data.pollStatus === "1" ? <span className="status live">live</span> : (poll.data.pollStatus=== "0" ?  <span className="status draft">draft</span> :  <span className="status conducted">conducted</span> )}
 				<Form.Group className="mb-3" controlId="pollName">
-					<Form.Label>Poll Name</Form.Label>
+					<Form.Label>Poll Name<ShareButton/></Form.Label>
 					<Form.Control
+					autoComplete="pollName"
 						type="text"
 						name="pollName"
 						placeholder="poll name"
@@ -395,6 +396,7 @@ export const ManagePoll = () => {
 				<Form.Group className="mb-3" controlId="pollDescription">
 					<Form.Label>Poll Description</Form.Label>
 					<Form.Control
+					autoComplete="nofill"
 						as="textarea"
 						name="pollDescription"
 						rows={3}
@@ -432,6 +434,7 @@ export const ManagePoll = () => {
 							</span>
 						</Form.Label>
 						<Form.Control
+					autoComplete="nofill"
 							name="addressList"
 							as="textarea"
 							rows={3}
@@ -451,6 +454,7 @@ export const ManagePoll = () => {
 						<Form.Group className="mb-3" controlId="tokenAddress">
 							<Form.Label>Token Address</Form.Label>
 							<Form.Control
+					autoComplete="nofill"
 								name="tokenAddress"
 								pattern="0x[a-fA-F0-9]{40}$"
 								title="Please enter valid address"
@@ -473,6 +477,7 @@ export const ManagePoll = () => {
 						<Form.Group className="mb-3" controlId="tokenAmount">
 							<Form.Label>Token Amount</Form.Label>
 							<Form.Control
+					autoComplete="nofill"
 								name="tokenAmount"
 								type="number"
 								min={1}

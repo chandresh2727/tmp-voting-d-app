@@ -13,7 +13,7 @@ export const ViewOption = () => {
 	const {
 		state: { accounts, contract },
 	} = useEth();
-
+	const [showRemoveOpt, setShowRemoveOpt] = useState(true)
     console.log(window.location.href, "view option jsx")
 
 	const [optionDetails, setOptionDetails] = useState({
@@ -43,18 +43,23 @@ export const ViewOption = () => {
         getOptionDetails().then((option) => {
             setOptionDetails({...optionDetails, ...option})
         }).catch((e) => MetamaskErrorHandler(e))
-    }, [accounts, contract,MetamaskErrorHandler, optionDetails])
+    }, [accounts, contract,MetamaskErrorHandler])
 	// const [isMetered, ]	
 
 
 	useEffect(() => {
+		// alert("hi")
 		const getPollDetails = async () => {
 			return await contract?.methods
-				.getPollDetails(getUrlVars()["pid"])
+				.getPollDetails(getUrlVars()["pid"], Math.floor(Date.now()/1000))
 				.call({ from: accounts[0] });
 		};
 
-		getPollDetails().catch((e) => MetamaskErrorHandler(e))
+		getPollDetails().then(d => {
+			if (showRemoveOpt && (d.pollStatus !== "0")) {
+				setShowRemoveOpt(false)
+			}
+		}).catch((e) => MetamaskErrorHandler(e))
 	}, [contract, accounts, navigate, MetamaskErrorHandler])
 
 	return (
@@ -90,9 +95,9 @@ export const ViewOption = () => {
             <button className="submit filterEffect" onClick={() => {
                 console.log(window.location.href, "clicked view option")
                 navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}`)}}> <IoMdArrowRoundBack/> &nbsp; {"GO BACK".toUpperCase()}</button>
-            &nbsp;&nbsp;<button style={{background: "crimson"}} className="submit filterEffect"onClick={() =>
+            &nbsp;&nbsp;{showRemoveOpt ? <button style={{background: "crimson"}} className="submit filterEffect"onClick={() =>
 											navigate(`/manage/option/remove?oid=${getUrlVars()['oid']}&pid=${getUrlVars()['pid']}`)
-										}> <IoMdTrash/> &nbsp; {"REMOVE".toUpperCase()}</button>
+										}> <IoMdTrash/> &nbsp; {"REMOVE".toUpperCase()}</button> : <></>}
             </div>
 		</Form>
 	);

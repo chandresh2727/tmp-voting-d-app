@@ -79,7 +79,7 @@ export const Vote = () => {
 					"VM Exception while processing transaction: revert ";
 				if (e.toString().includes(commString)) {
 					let emsg = getRPCErrorMessage(e);
-					console.log("----ManagePoll.jsx----", emsg);
+					console.log("----Vote.jsx----", emsg);
 					navigate("/?error=1&msg=" + emsg);
 					// window.location.href = "/?error=1&msg=" + emsg;
 				} else {
@@ -115,10 +115,54 @@ export const Vote = () => {
 				}
 			});
 	}, [accounts, contract, navigate]);
+	const [allowed, setAllowed] = useState(false)
 
 
 	const hasUserVoted = async () => contract?.methods?.getUserVote(getUrlVars()['pid']).call({from: accounts[0]}).then((d) => d)
-	let handleSubmitVote;
+	let 		handleSubmitVote = async (e) => {
+		if (!allowed) return;
+		e.preventDefault();
+		document.getElementById("submitBtnForVote").disabled = true;
+		if(selected.class=== "") {
+			document.getElementById("submitBtnForVote").disabled = false;
+			displayErrMsg()
+			return navigate(`${window.location.pathname}?error=true&msg=please choose an option first&pid=${getUrlVars()['pid']}`)
+		}
+		
+			let hash = web3.utils.sha3(JSON.stringify({pid: getUrlVars()['pid'], oid: options.data.optionId}));
+		let signature = await web3.eth.personal
+			.sign(hash, accounts[0])
+			.catch((e) => {
+				console.log(e);
+			});
+		let r = signature.slice(0, 66);
+		let s = "0x" + signature.slice(66, 130);
+		let v = parseInt(signature.slice(130, 132), 16);
+		let value = await contract.methods.castVote(
+				getUrlVars()['pid'],
+				selected.option.optionId,
+				hash,
+				r,
+				s,
+				v
+			)
+			.send({ from: accounts[0] })
+			.catch((e) => {
+				console.log(e);
+				// alert("user cancelled the vote", "hh");
+				let commString =
+				"VM Exception while processing transaction: revert ";
+				let emsg = e.message.split(commString)[1].split("\",")[0];
+				console.log("----ManagePoll.jsx----", emsg);
+				navigate('/?error=1&msg=' + emsg)					});
+		alert("hi")
+		console.log(await value);
+		let a = await value.events["evCastVote"].returnValues[
+			"wasSuccessful"
+		];
+		document.getElementById("submitBtnForVote").disabled = false;
+	};
+
 	hasUserVoted().then(d => {
 		console.log('ddd', d)
 		if(d.hasVoted) {
@@ -147,48 +191,9 @@ export const Vote = () => {
 			}
 		} else {
 			// alert("not voted")
-			handleSubmitVote = async (e) => {
-				e.preventDefault();
-				document.getElementById("submitBtnForVote").disabled = true;
-				if(selected.class=== "") {
-					document.getElementById("submitBtnForVote").disabled = false;
-					displayErrMsg()
-					return navigate(`${window.location.pathname}?error=true&msg=please choose an option first&pid=${getUrlVars()['pid']}`)
-				}
-				
-					let hash = web3.utils.sha3(JSON.stringify({pid: getUrlVars()['pid'], oid: options.data.optionId}));
-				let signature = await web3.eth.personal
-					.sign(hash, accounts[0])
-					.catch((e) => {
-						console.log(e);
-					});
-				let r = signature.slice(0, 66);
-				let s = "0x" + signature.slice(66, 130);
-				let v = parseInt(signature.slice(130, 132), 16);
-				let value = await contract.methods.castVote(
-						getUrlVars()['pid'],
-						selected.option.optionId,
-						hash,
-						r,
-						s,
-						v
-					)
-					.send({ from: accounts[0] })
-					.catch((e) => {
-						console.log(e);
-						// alert("user cancelled the vote", "hh");
-						let commString =
-						"VM Exception while processing transaction: revert ";
-						let emsg = e.message.split(commString)[1].split("\",")[0];
-						console.log("----ManagePoll.jsx----", emsg);
-						navigate('/?error=1&msg=' + emsg)					});
-				alert("hi")
-				console.log(await value);
-				let a = await value.events["evCastVote"].returnValues[
-					"wasSuccessful"
-				];
-				document.getElementById("submitBtnForVote").disabled = false;
-			};
+			if(!allowed) {
+				setAllowed(true)
+			}
 		}
 	}).catch(d => {
 		// alert("Network Connection Error")
