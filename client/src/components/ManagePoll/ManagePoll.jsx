@@ -287,7 +287,7 @@ export const ManagePoll = () => {
 		<div className="artificialContainer">
 			<div className={showErr ? "fadeOut": 'hide'}>
 				{getUrlVars()["error"] ? (
-				<Toast style={{background: "#ffb7b7", color: "black", border: "1.5px solid #d67c7c"}}
+				<Toast style={{background: "#ffb7b7", color: "black", border: "1.5px solid #d67c7c", width: "fit-content"}}
 				class="lg-toast"
 				// bg={"danger"}
 				autohide={true}

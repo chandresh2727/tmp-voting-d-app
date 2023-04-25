@@ -754,6 +754,31 @@ contract Voting {
         emit evCastVote(globalVoteMap[_vid], msg.sender, true, "success: vote has been casted");
         return true;
     }
+
+
+    struct UserVote {
+        bool hasVoted;
+        Vote vote;
+    }
+    function getUserVote(string memory _pid) public view returns (UserVote memory) {
+        bool _hasUserAlreadyVoted = false;
+        Vote memory _vote = Vote("","",address(0x0),"");
+        for (uint8 i = 0; i < user2voteMap[msg.sender].length; i++) {
+            if (
+                keccak256(
+                    abi.encodePacked(
+                        globalVoteMap[user2voteMap[msg.sender][i]].pollId
+                    )
+                ) == keccak256(abi.encodePacked(_pid))
+            ) {
+                _vote = globalVoteMap[user2voteMap[msg.sender][i]];
+                _hasUserAlreadyVoted = true;
+                break;
+            }
+        }
+        return UserVote(_hasUserAlreadyVoted, _vote);
+    }
+
 }
 // pragma solidity ^0.8.0;
 

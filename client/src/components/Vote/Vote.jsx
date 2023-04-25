@@ -47,6 +47,7 @@ export const Vote = () => {
 	//     }
 	// })
 
+
 	useEffect(() => {
 		const checkPollIdForVoter = async () =>
 			await contract?.methods
@@ -91,10 +92,6 @@ export const Vote = () => {
 
 		fetchPollOptions()
 			.then((datar) => {
-				// datar.forEach((v) => {
-				// 	setPopovers((prevState) => {
-				// 		prevState[v.optionId] = })
-				// })
 				setOptions((prevState) => ({
 					...prevState,
 					fetched: true,
@@ -119,80 +116,93 @@ export const Vote = () => {
 			});
 	}, [accounts, contract, navigate]);
 
+
+	const hasUserVoted = async () => contract?.methods?.getUserVote(getUrlVars()['pid']).call({from: accounts[0]}).then((d) => d)
+	let handleSubmitVote;
+	hasUserVoted().then(d => {
+		console.log('ddd', d)
+		if(d.hasVoted) {
+			// alert('voted')
+			document.getElementById("submitBtnForVote").disabled = true;
+			document.getElementById(d.vote.optionId).className = "option chosen"
+			let _options =document.getElementsByClassName("option")
+			for (let ind = 0; ind < _options.length; ind++) {
+				if(_options[ind].className === "option") {
+					console.log(_options[ind])
+					_options[ind].style.background = "rgba(155,155,155,.3)"
+					_options[ind].style.cursor = "not-allowed"
+					_options[ind].onclick = null;
+					var new_element = _options[ind].cloneNode(true);
+					_options[ind].parentNode.replaceChild(new_element, _options[ind]);	
+				} else {
+					let commString = "You've voted for the following option"
+					if(!_options[ind].parentElement.innerText.includes(commString)){
+						var element = document.createElement("div")
+						element.style.fontSize ="small"
+						element.style.color = "green"
+						element.innerText = commString
+						_options[ind].parentElement.insertBefore(element, _options[ind].parentElement.children[ind])}
+				}
+				
+			}
+		} else {
+			// alert("not voted")
+			handleSubmitVote = async (e) => {
+				e.preventDefault();
+				document.getElementById("submitBtnForVote").disabled = true;
+				if(selected.class=== "") {
+					document.getElementById("submitBtnForVote").disabled = false;
+					displayErrMsg()
+					return navigate(`${window.location.pathname}?error=true&msg=please choose an option first&pid=${getUrlVars()['pid']}`)
+				}
+				
+					let hash = web3.utils.sha3(JSON.stringify({pid: getUrlVars()['pid'], oid: options.data.optionId}));
+				let signature = await web3.eth.personal
+					.sign(hash, accounts[0])
+					.catch((e) => {
+						console.log(e);
+					});
+				let r = signature.slice(0, 66);
+				let s = "0x" + signature.slice(66, 130);
+				let v = parseInt(signature.slice(130, 132), 16);
+				let value = await contract.methods.castVote(
+						getUrlVars()['pid'],
+						selected.option.optionId,
+						hash,
+						r,
+						s,
+						v
+					)
+					.send({ from: accounts[0] })
+					.catch((e) => {
+						console.log(e);
+						// alert("user cancelled the vote", "hh");
+						let commString =
+						"VM Exception while processing transaction: revert ";
+						let emsg = e.message.split(commString)[1].split("\",")[0];
+						console.log("----ManagePoll.jsx----", emsg);
+						navigate('/?error=1&msg=' + emsg)					});
+				alert("hi")
+				console.log(await value);
+				let a = await value.events["evCastVote"].returnValues[
+					"wasSuccessful"
+				];
+				document.getElementById("submitBtnForVote").disabled = false;
+			};
+		}
+	}).catch(d => {
+		// alert("Network Connection Error")
+		console.log(d)
+	})
+	
 	const displayErrMsg = () => {
 		setShowError(1)
 		setTimeout(()=>setShowError(0),5000)
 	}
 
-	const handleSubmitVote = async (e) => {
-		e.preventDefault();
-		document.getElementById("submitBtnForVote").disabled = true;
-		if(selected.class=== "") {
-			document.getElementById("submitBtnForVote").disabled = false;
-			displayErrMsg()
-			return navigate(`${window.location.pathname}?error=true&msg=please choose an option first&pid=${getUrlVars()['pid']}`)
-		}
-		
-			let hash = web3.utils.sha3(JSON.stringify({pid: getUrlVars()['pid'], oid: options.data.optionId}));
-		let signature = await web3.eth.personal
-			.sign(hash, accounts[0])
-			.catch((e) => {
-				console.log(e);
-			});
-		// alert("before rsv")
-		let r = signature.slice(0, 66);
-		let s = "0x" + signature.slice(66, 130);
-		let v = parseInt(signature.slice(130, 132), 16);
-		// alert(r,s,v)
-		// alert(getUrlVars()['pid'] + selected.option.optionId)
-		// console.log(getUrlVars()['pid'], selected.option.optionId)
-		let value = await contract.methods.castVote(
-				getUrlVars()['pid'],
-				selected.option.optionId,
-				hash,
-				r,
-				s,
-				v
-			)
-			.send({ from: accounts[0] })
-			.catch((e) => {
-				console.log(e);
-				// alert("user cancelled the vote", "hh");
-				let commString =
-				"VM Exception while processing transaction: revert ";
-				let emsg = e.message.split(commString)[1].split("\",")[0];
-				console.log("----ManagePoll.jsx----", emsg);
-				navigate('/?error=1&msg=' + emsg)
-			// if (e.toString().includes(commString)) {
-				
-			// 	// window.location.href = "/?error=1&msg=" + emsg;
-			// } else {
-			// 	console.log("managepolljsx ->getPollTimeDetails().catch()");
-			// 	// alert("unknown error occured");
-			// 	throw new Error(e);
-			// }
-			});
-		alert("hi")
-		console.log(await value);
-		let a = await value.events["evCastVote"].returnValues[
-			"wasSuccessful"
-		];
-		// console.log(a, "a is at vote.jsx")
-		// if (a) {
-		// 	alert(a)
-		// 	// setPoll({...poll, fetched: false})
-		// } else {
-		// 	alert("something went wrong!");
-		// }
 
-		document.getElementById("submitBtnForVote").disabled = false;
-		
-	};
 
-	const handleSelectOption = (event, optionDetails) => {
-		event.preventDefault()
-		console.error(optionDetails, "999999999999999999999999")
-	}
+	////new end
 	return (
 		<>			<div className={showErr ? "fadeOut": 'hide'} style={{width: "inherit"}}>
 		{getUrlVars()["error"] ? (
@@ -230,7 +240,7 @@ export const Vote = () => {
 						style={{ boxShadow: "initial", padding: "0" }}
 						onSubmit={(e) => handleSubmitVote(e)}>
 						{options?.data?.map((v, i) => (
-							<div key={`opt-${i + 1}`} className={selected.class === `opt-${i+1}` ? 'option chosen' : 'option'} onClick={(e) => setSelected((prevState) => ({
+							<div key={`opt-${i + 1}`} id={v.optionId} className={selected.class === `opt-${i+1}` ? 'option chosen' : 'option'} onClick={(e) => setSelected((prevState) => ({
 								...prevState,
 								class:  `opt-${i+1}`,
 								option: {
