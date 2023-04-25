@@ -1,11 +1,12 @@
 import { getUrlVars } from '../../Handlers/utils'
 import './ShareButton.css'
 import {RiFileCopy2Line} from 'react-icons/ri'
+import {FiShare2} from 'react-icons/fi'
 import Overlay from 'react-bootstrap/Overlay';
 import Tooltip from 'react-bootstrap/Tooltip';
 import { useState , useRef, useEffect} from 'react';
 
-export const ShareButton = () => {
+export const ShareButton = (props) => {
     const [showCopyTT, setShowCopyTT] = useState(false)
     const target = useRef(null);
     const [shareDimentions, setShareDimentions] = useState({
@@ -29,7 +30,7 @@ useEffect(() => {
     return (<span className='shareBtn'>
  <Overlay target={target.current}  show={showCopyTT} placement="right" >
         {(props) => (
-          <Tooltip id="overlay-example" {...props} style={{zIndex: "999", position: "absolute", top: shareDimentions.top+10, left: shareDimentions.left+50, right: shareDimentions.right, width: "fit-content", fontSize: "1.5rem"}}>
+          <Tooltip id="overlay-example" {...props} style={{zIndex: "999999999", position: "absolute", top: shareDimentions.top+10, left: shareDimentions.left+50, right: shareDimentions.right, width: "fit-content", fontSize: "1.5rem"}}>
             Copied!
           </Tooltip>
         )}
@@ -45,5 +46,11 @@ setTimeout(() => {
         console.error('Async: Could not copy text: ', err);
       })
 },500)}/>
+or
+<FiShare2 className='shareBtnIcon' onClick={() =>  navigator.share({
+    title: props.pollName,
+    text: 'Caste Your Vote! ' + props.pollDescription,
+    url: `${window.location.origin}/vote?pid=${getUrlVars()['pid']}`,
+  })}/>
     </span>)
 }

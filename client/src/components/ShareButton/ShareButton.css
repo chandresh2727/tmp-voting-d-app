@@ -1,5 +1,14 @@
+.shareBtn{
+    background-color: grey;
+    border-radius: 20px;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    padding-left: .2rem;
+    padding-right: .2rem;
+}
+
 .shareBtn, .shareBtnIcon {
-    color: rgba(30,30,30,1) !important
+    color: rgba(230,230,230,1) !important;
 }
 
 .shareBtnIcon{
@@ -11,6 +20,6 @@
 }
 
 .shareBtn:hover {
-    background-color: rgba(250,250,250, .2);
-  color: rgba(0,0,0,1)
+    /* background-color: rgba(250,250,250, .2); */
+  /* color: rgba(255,255,255,1) */
 }

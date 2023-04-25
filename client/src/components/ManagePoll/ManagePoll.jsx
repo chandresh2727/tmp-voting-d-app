@@ -337,7 +337,7 @@ export const ManagePoll = () => {
 			<Form style={(poll.data.pollStatus === "1") ? {"border":"1.5px solid #00ffad","boxShadow":"#006e53 1px 1px 74px 14px"}: {}}>
 			{poll.data.pollStatus === "1" ? <span className="status live">live</span> : (poll.data.pollStatus=== "0" ?  <span className="status draft">draft</span> :  <span className="status conducted">conducted</span> )}
 				<Form.Group className="mb-3" controlId="pollName">
-					<Form.Label>Poll Name<ShareButton/></Form.Label>
+					<Form.Label>Poll Name&nbsp;&nbsp;<ShareButton pollName={poll.data.pollName} pollDescription={poll.data.pollDescription}/></Form.Label>
 					<Form.Control
 					autoComplete="pollName"
 						type="text"
