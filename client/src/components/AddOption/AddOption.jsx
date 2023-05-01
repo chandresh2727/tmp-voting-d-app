@@ -16,77 +16,97 @@ export const AddOption = () => {
 	const {
 		state: { accounts, contract },
 	} = useEth();
-	console.log(window.location.href, "add option jsx")
 
-	// const [isUser, setIsUser] =  useState(false)
 	const [optionDetails, setOptionDetails] = useState({
 		pollId: getUrlVars()["pid"],
 		optionId: "demo",
 		optionName: "",
 		optionDescription: "",
-
-	})
-	// const [isMetered, ]	
+		voteCount: 0,
+	});
 
 	useEffect(() => {
-		const getPollDetails = async () => {
-			return await contract?.methods
-				.getPollDetails(getUrlVars()["pid"])
-				.call({ from: accounts[0] });
-		};
+		try {
+			const getPollDetails = async () => {
+				return await contract?.methods
+					.getPollDetails(
+						getUrlVars()["pid"],
+						Math.floor(Date.now() / 1000)
+					)
+					.call({ from: accounts[0] });
+			};
 
-		const isPollLive = async () => {
-			return await contract?.methods.isPollLive(getUrlVars()["pid"]).call({from: accounts[0]})
+			const isPollLive = async () => {
+				return await contract?.methods
+					.isPollLive(getUrlVars()["pid"])
+					.call({ from: accounts[0] });
+			};
+			isPollLive()
+				.then((d) => {
+					if (d)
+						return navigate(
+							`/manage/poll/modify?pid=${
+								getUrlVars()["pid"]
+							}&error=1&msg=You cannot add an option after the poll is live!`
+						);
+				})
+				.catch((e) =>
+					console.log("Addoption.jsx -> isPollLive().catch() ", e)
+				);
+
+			getPollDetails().catch((e) => {
+				let commString =
+					"VM Exception while processing transaction: revert ";
+				if (e.toString().includes(commString)) {
+					let emsg = getRPCErrorMessage(e);
+					console.log("----ManagePoll.jsx----", emsg);
+					navigate("/?error=1&msg=" + emsg);
+				} else {
+					// alert("unknown error occured");
+					console.log("addoptionjsx ->getpolldetails().catch()");
+					throw new Error(e);
+				}
+			});
+		} catch (e) {
+			console.error(e);
 		}
-		isPollLive().then(d => {
-if (d) return navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=1&msg=You cannot add an option after the poll is live!`)
-		}).catch((e) => console.log('Addoption.jsx -> isPollLive().catch() ', e ))
-
-
-		getPollDetails().catch((e) => {
-			let commString =
-				"VM Exception while processing transaction: revert ";
-			if (e.toString().includes(commString)) {
-				let emsg = getRPCErrorMessage(e);
-				console.log("----ManagePoll.jsx----", emsg);
-				navigate("/?error=1&msg=" + emsg);
-			} else {
-				// alert("unknown error occured");
-				console.log("addoptionjsx ->getpolldetails().catch()");
-				throw new Error(e);
-			}
-		});
-	}, [contract, accounts, navigate])
+	}, [contract, accounts, navigate]);
 
 	const handleAddOptionSubmit = async (event) => {
-		event.preventDefault()
-		if (optionDetails.optionName === "") return alert("please enter the title")
+		event.preventDefault();
+		if (optionDetails.optionName === "")
+			return alert("please enter the title");
 
 		let hash = web3.utils.sha3(JSON.stringify(optionDetails));
 		let signature = await web3.eth.personal
 			.sign(hash, accounts[0])
-			.catch((e) => {
-				console.log(e);
-			})
 		let r = signature.slice(0, 66);
 		let s = "0x" + signature.slice(66, 130);
 		let v = parseInt(signature.slice(130, 132), 16);
-		let value = await contract.methods.addPollOption(optionDetails, hash, r, s, v).send({ from: accounts[0] }).catch((e) => {
-			console.log(e);
-			alert("user cancelled the heheh status change", "hh");
-		});
+		let value = await contract.methods
+			.addPollOption(optionDetails, hash, r, s, v)
+			.send({ from: accounts[0] })
+			.catch((e) => {
+				alert("user cancelled the operation");
+			});
 		let a = await value.events["evAddPollOption"].returnValues["added"];
-		console.log("evAddPollOption", a);
 		if (a) {
-			navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&success=true&msg=option added successfully`)
+			navigate(
+				`/manage/poll/modify?pid=${
+					getUrlVars()["pid"]
+				}&success=true&msg=option added successfully`
+			);
 		} else {
-			console.log(a)
-			navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=true&msg=there was some issue adding option`)
+			navigate(
+				`/manage/poll/modify?pid=${
+					getUrlVars()["pid"]
+				}&error=true&msg=there was some issue adding option`
+			);
 		}
-	}
+	};
 
 	return (
-		<Form onSubmit={(e) => handleAddOptionSubmit(e) }>
+		<Form onSubmit={(e) => handleAddOptionSubmit(e)}>
 			{/* option title */}
 			<Form.Group className="mb-3" controlId="optionTitle">
 				<Form.Label>Option Title</Form.Label>
@@ -95,11 +115,15 @@ if (d) return navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=1&m
 					name="optionTitle"
 					placeholder="Option Title"
 					value={optionDetails.optionName}
-					onChange={(e) => setOptionDetails({...optionDetails, optionName: e.target.value})}
+					onChange={(e) =>
+						setOptionDetails({
+							...optionDetails,
+							optionName: e.target.value,
+						})
+					}
 					required
 				/>
 			</Form.Group>
-
 
 			{/* optionDescription */}
 			<Form.Group className="mb-3" controlId="optionDescription">
@@ -110,10 +134,14 @@ if (d) return navigate(`/manage/poll/modify?pid=${getUrlVars()["pid"]}&error=1&m
 					rows={3}
 					placeholder="Brief description for the option"
 					value={optionDetails.optionDescription}
-					onChange={(e) => setOptionDetails({...optionDetails, optionDescription: e.target.value})}
+					onChange={(e) =>
+						setOptionDetails({
+							...optionDetails,
+							optionDescription: e.target.value,
+						})
+					}
 				/>
 			</Form.Group>
-
 
 			{/* Submit poll */}
 			<button className="submit"> {"Create option".toUpperCase()}</button>

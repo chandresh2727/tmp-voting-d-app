@@ -11,7 +11,9 @@ import {
 	textAreaIterator,
 } from "../../Handlers/iteratorHandler";
 import "./ManagePoll.css";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from 'react-router-dom'
+
+
 import {VscError} from 'react-icons/vsc'
 import { ShareButton } from "../ShareButton/ShareButton";
 
@@ -25,7 +27,6 @@ export const ManagePoll = () => {
 	const [rawAddressList, setRawAddressList] = useState("Loading...");
 	const [statusType, setStatusType] = useState(0);
 	const [showSuccessMsg, setShowSuccessMsg] = useState(false)
-	console.log(showSuccessMsg)
 	const [poll, setPoll] = useState({
 		fetched: false,
 		data: {
@@ -82,7 +83,7 @@ export const ManagePoll = () => {
 	useEffect(() => {
 		const getPollDetails = async () => {
 			return await contract?.methods
-				.getVerifiedPoll(getUrlVars()["pid"], Math.floor(Date.now()/1000))
+				.getPollDetails(getUrlVars()["pid"], Math.floor(Date.now()/1000))
 				.call({ from: accounts[0] });
 		};
 		const getPollTimeDetails = async () => {
@@ -92,7 +93,6 @@ export const ManagePoll = () => {
 		};
 		getPollDetails()
 			.then((details) => {
-				console.log(details);
 				setRawAddressList(details.addressList.join(", "));
 				setPoll({
 					fetched: true,
@@ -127,7 +127,6 @@ export const ManagePoll = () => {
 			});
 		getPollTimeDetails()
 			.then((details) => {
-				console.log("details", details);
 				setPollTime({
 					fetched: true,
 					data: {
@@ -170,11 +169,10 @@ export const ManagePoll = () => {
 		setShowError(1)
 		setTimeout(()=>setShowError(0),5000)
 	}
-	console.log(window.location.href, "manage poll jsx")
+
 	useEffect(() => {
 
 		const changeStatus = async (ind) => {
-			console.log("indexxxxxxxxxx", ind);
 			let hash = web3.utils.sha3(JSON.stringify(ind));
 			setStatusType(0);
 			let signature = await web3.eth.personal
@@ -200,11 +198,9 @@ export const ManagePoll = () => {
 					console.log(e);
 					alert("user cancelled the status change", "hh");
 				});
-			console.log(await value);
 			let a = await value.events["evUpdatePollStatus"].returnValues[
 				"successfull"
 			];
-			console.log("yaha pe hu12eQer32qQ@#4rq3$RQ#$Q#@Q@ =>  ", a);
 			if (a) {
 				setPoll({...poll, fetched: false})
 			} else {
@@ -238,10 +234,8 @@ export const ManagePoll = () => {
 				console.log(e);
 				alert("user cancelled the request", "hh");
 			});
-		console.log("value ", value);
 
 		let a = await value.events["evUpdatePoll"].returnValues["successfull"];
-		console.log("evUpdatePoll", a);
 
 		if (a) {
 			setShowSuccessMsg(true)
@@ -334,6 +328,7 @@ export const ManagePoll = () => {
 					""
 				)}
 			</div>
+			{/* <button onClick={()=>navigate('/results')}>load results</button> */}
 			<Form style={(poll.data.pollStatus === "1") ? {"border":"1.5px solid #00ffad","boxShadow":"#006e53 1px 1px 74px 14px"}: {}}>
 			{poll.data.pollStatus === "1" ? <span className="status live">live</span> : (poll.data.pollStatus=== "0" ?  <span className="status draft">draft</span> :  <span className="status conducted">conducted</span> )}
 				<Form.Group className="mb-3" controlId="pollName">
@@ -373,7 +368,6 @@ export const ManagePoll = () => {
 					<span className="immutableItem">
 						Starting Date:{" "}
 						<span className="PrefixVal">
-							{console.log(pollTime.data.pollStartDate)}
 							{pollTime.data.customStartDate
 								? new Date(
 										parseInt(pollTime.data.pollStartDate)

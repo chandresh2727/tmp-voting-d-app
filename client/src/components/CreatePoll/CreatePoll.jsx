@@ -60,8 +60,6 @@ export const CreatePoll = () => {
 		message: 0,
 	});
 
-	console.log(web3)
-
 	// const [customStartDate, setCustomStartDate] = useState(false);
 	// const [startDate, setStartDate] = useState({
 	// 	localdate: "00/00/0000, 00:00:00 AM",
@@ -267,10 +265,6 @@ export const CreatePoll = () => {
 			let r = signature.slice(0, 66);
 			let s = "0x" + signature.slice(66, 130);
 			let v = parseInt(signature.slice(130, 132), 16);
-			console.log(poll);
-			console.log("signature" + signature);
-			console.log("hash" + hash);
-			console.log(`r = ${r} | s = ${s} | v = ${v}`);
 			setTimeout(()=>setBtnText("verifying and redirecting (this might take a while)"),7500)
 			// address[] must always contain string of address
 			// address (single instance) can either be string  or plain
@@ -280,7 +274,6 @@ export const CreatePoll = () => {
 			// convert obj values to array
 			let _poll = Object.keys(poll).map((key) => poll[key]);
 			let _pollTime = Object.keys(pollTime).map((key) => pollTime[key]);
-			console.log(_pollTime);
 			console.table(
 				_poll,
 				_pollTime,
@@ -488,20 +481,14 @@ iii)Public - Anyone can vote just by connecting their account">
 											selectedDate.toLocaleString(),
 									},
 								};
-
-								console.log(retObj);
 								return retObj;
 							});
 
-							console.log(epoch < moment().valueOf());
-							console.log(epoch);
-							console.log(moment().valueOf());
 							if (epoch < moment().valueOf()) {
 								setStartDateError({ error: true, message: 1 });
 							} else {
 								setStartDateError({ error: false, message: 0 });
 							}
-							// setEndDateMinBoundary(`${toIsoString(new Date(moment(localEpoch+  1800000).toLocaleString())).slice(0,-7)}`)
 						}}
 						label={
 							customDateObj.startDate.localdate ===
@@ -521,13 +508,6 @@ iii)Public - Anyone can vote just by connecting their account">
 						}
 						value={
 							customDateObj.startDate.minStartDate.slice(0, -9)
-							// toIsoString(new Date(moment().toLocaleString())).slice(0, -9)
-
-							// 	(() => {
-							// 	let dateC = new Date(Date.now() +2000000)
-							// 	let ndate = `${dateC.getFullYear()}-${(('0'+(dateC.getMonth()+1)).slice(-2))}-${(('0'+dateC.getDate()).slice(-2))}T${(('0'+dateC.getHours()).slice(-2))}:${(('0'+dateC.getMinutes()).slice(-2))}`
-							// 	return ndate
-							// })()
 						}
 						required
 					/>

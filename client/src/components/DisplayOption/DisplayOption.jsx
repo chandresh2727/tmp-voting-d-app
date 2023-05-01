@@ -29,7 +29,6 @@ export const DisplayOptions = (pstatus) => {
 		};
 		fetchPollOptions()
 			.then((details) => {
-				console.log(details);
 				setPollOptions({ fetched: true, data: details });
 			})
 			.catch((e) => {

@@ -15,6 +15,7 @@ module.exports = {
   resolve: { extensions },
   devServer: {
     historyApiFallback: true,
+    allowedHosts: "all",
     client: {
       overlay: false,
     },

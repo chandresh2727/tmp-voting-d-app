@@ -6,10 +6,6 @@ import {
 	num2alpha,
 } from "../../Handlers/utils";
 import { useNavigate } from "react-router-dom";
-
-import OverlayTrigger from "react-bootstrap/OverlayTrigger";
-import Popover from "react-bootstrap/Popover";
-import Button from "react-bootstrap/Button";
 import Toast from "react-bootstrap/Toast";
 import {VscError} from 'react-icons/vsc'
 import Form from "react-bootstrap/Form";
@@ -71,7 +67,6 @@ export const Vote = () => {
 						...datar,
 					},
 				}));
-				console.log("    CQNRLQ32 48FCWG", datar);
 			})
 			.catch((e) => {
 				console.log(e);
@@ -155,16 +150,18 @@ export const Vote = () => {
 				let emsg = e.message.split(commString)[1].split("\",")[0];
 				console.log("----ManagePoll.jsx----", emsg);
 				navigate('/?error=1&msg=' + emsg)					});
-		alert("hi")
+		// alert("hi")
 		console.log(await value);
 		let a = await value.events["evCastVote"].returnValues[
 			"wasSuccessful"
 		];
+		if (a) {
+			window.location.reload()
+		}
 		document.getElementById("submitBtnForVote").disabled = false;
 	};
 
 	hasUserVoted().then(d => {
-		console.log('ddd', d)
 		if(d.hasVoted) {
 			// alert('voted')
 			document.getElementById("submitBtnForVote").disabled = true;
@@ -230,7 +227,6 @@ export const Vote = () => {
 			<header>{poll.fetched ? poll.data.pollName : "loading.."}</header>
 			<p>{poll.fetched ? poll.data.pollDescription : "loading.."}</p>
 			<div classnam="poll-area">
-				{console.log("wsefwaegg")}
 				{!options.fetched ? (
 					<>
 						<span className="card is-loading">

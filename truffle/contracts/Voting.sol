@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// import "./IERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -19,32 +18,19 @@ contract Voting {
         string optionId;
     }
 
-    // vid => Vote {}
-    mapping(string => Vote) public globalVoteMap;
-    // pollId -> string[vid]
-    mapping(string => string[]) public poll2voteMap;
-    // userId -> string[vid]
-    mapping(address => string[]) public user2voteMap;
-
+    // a lot of possibilities here, like option image, different cost for different option, etc
     struct Option {
         string pollId;
-        string optionId; // opt prefix with random string
-        string optionName; // gifu
+        string optionId;
+        string optionName;
         string optionDescription;
-        // bool isUser; // gifu get it from user andif user
-        // address optionAddress; // gifu if user is true thn ; default 0x000 | walletAdress of the Candidate
-        // string imageUrl; // gifu if true store the url else store "N/A"
-        // uint stakeAmount; // gifu and if poll type is metered else 0.0
-        // address tokenAddress; // gifu and if poll type is metered else 0x0000
-        // uint votePrice; // 1 vote will cost 5 rights??
-       // gifu just for bystand; the political party's message
-        // string hostId; // the hostId of the poll Host
+        uint8 voteCount;
     }
 
     struct User {
         address walletAddress;
         string hostId;
-        string voterId; 
+        string voterId;
         string[] pollId;
         string[] votes;
     }
@@ -54,8 +40,6 @@ contract Voting {
         PRIVATE,
         METERED
     }
-
-    // PollType public pollType;
 
     enum PollStatus {
         DRAFT,
@@ -78,6 +62,7 @@ contract Voting {
         string[] options;
     }
 
+    // needed to created separate struct because of 16 parameter limit
     struct PollTime {
         string pollId;
         bool customStartDate;
@@ -86,34 +71,46 @@ contract Voting {
         int pollEndDate;
     }
 
-    User[] users;
-    Poll[] demoPolls;
-    PollTime[] demoPollTimes;
-    // Rights[] rights;
-    // Option[] options;
+    User[] users; // users array
+
+    // I could've used more mappings to avoid using forloops in new functions, but it was getting complicated
+    // msg.sender => User[]
     mapping(address => User[1]) public usersMap;
+
+    // hostID and voterID is some nonsense which I came up in the early phase, servers no major purpose,
+    // too lazy to rewrite entite code because of this, so ignore
+    // host id string starting with "hst" maps to msg.msg.sender
     mapping(string => address) public hostIdMap;
+    // host id string starting with "vtr" maps to msg.msg.sender
     mapping(string => address) public voterIdMap;
 
-    // pollId to Poll
+    // MAIN CORE COMPONENTS - could've spent some time renaming them like findPollByPIDMap() but lazy
+    // poll id string starting with "pid" maps to a Poll
     mapping(string => Poll) public pollsMap;
-    // host account address => list of polls created by host
+    // msg.send => list of polls created by host (string array of poll ids)
     mapping(address => string[]) public polls;
-    // poll id => host's account address
+    // poll id => msg.sender address (find the owner of the poll)
     mapping(string => address) public pollIdMap;
-    // user => fetch the schedule for the poll
+    // poll id string maps to poll time
     mapping(string => PollTime) public pollTimesMap;
+
     // poll id => options Ids for the poll
     mapping(string => string[]) public optionIdMap;
     // option id (oid) => Option
     mapping(string => Option) public optionMap;
-    // debug vars start
-    // debug vars end
 
-    // utils variables start
+
+    // vote id starting with vid maps to a vote
+    mapping(string => Vote) public globalVoteMap;
+    // gets all the votes [vote id string array] using poll id
+    mapping(string => string[]) public poll2voteMap;
+    // get all the votes by user
+    mapping(address => string[]) public user2voteMap;
+
+
+
+    // utils variables start, increses each time a random id gets generated, no logical sense, but it is what it is 
     uint counter = 1;
-
-    //utils variables end
 
     function findIdByAddress(
         address _user
@@ -126,6 +123,8 @@ contract Voting {
         return UserId("null", "null", false);
     }
 
+
+    // I was watching some anime while I was naming this function
     function _checkUsersExistence(address _user) public view returns (bool) {
         for (uint8 i = 0; i < users.length; i++) {
             if (users[i].walletAddress == _user) {
@@ -135,6 +134,7 @@ contract Voting {
         return false;
     }
 
+    // copied from ethereum stackexchange obv
     function _getSlice(
         uint256 begin,
         uint256 end,
@@ -167,6 +167,13 @@ contract Voting {
         return false;
     }
 
+
+    // this function basically verifys the hash,r,s,v against the msg.sender / _user
+    // I didn't knew about msg.sender while I was writing this section, and I'm lazy to remove this
+    // additionally this verification system is pretty useless because the hacker just needs some random hash sent
+    // from the target, and they can basically perform every action in their stead
+    // prevention?: One can use random nonce with backend server to validate signature, so each signature even for the
+    // same action could be different
     function _verifySIG(
         address _user,
         bytes32 _hash,
@@ -200,7 +207,9 @@ contract Voting {
         return false;
     }
 
-    function _random(uint number) public returns (uint) {
+
+    // generates random number
+    function _random(uint number) private returns (uint) {
         counter++;
         return
             uint(
@@ -215,7 +224,8 @@ contract Voting {
             ) % number;
     }
 
-    function _randomString(uint size) public returns (string memory) {
+    // generates a random string based on random number
+    function _randomString(uint size) private returns (string memory) {
         bytes memory randomWord = new bytes(size);
         // since we have 26 letters
         bytes memory chars = new bytes(36);
@@ -227,11 +237,11 @@ contract Voting {
         return string(randomWord);
     }
 
-    function _generateId(string memory _prefix) public returns (string memory) {
+    function _generateId(string memory _prefix) private returns (string memory) {
         return string(abi.encodePacked(_prefix, _randomString(13)));
     }
 
-    function _createUser(address _user) public returns (bool) {
+    function _createUser(address _user) private returns (bool) {
         string memory _hostId = _generateId("hst");
         string memory _voterId = _generateId("vtr");
         string[] memory placeholderArr;
@@ -250,7 +260,6 @@ contract Voting {
         return true;
     }
 
-    // function createPoll(string memory _pollName, string memory _pollDescription,string memory _pollType, address _tokenAddr, uint _tokenAmount, bool _customStartDate, bool _customEndDate, uint _pollStartDate, uint _pollEndDate, address _user, uint _nonce, uint8 _v, bytes32 _r, bytes32 _s) public returns(bool) {
     event evCreatePoll(string _pollId);
     function createPoll(
         Poll memory poll,
@@ -273,7 +282,9 @@ contract Voting {
         poll.hostId = findIdByAddress(_user).hostId;
         string[] memory option;
         poll.options = option;
-        address defAddr = 0x0000000000000000000000000000000000000000;
+        
+        // determine poll type
+        address defAddr = address(0x0);
         if (poll.tokenAmount != 0 && poll.tokenContractAddress != defAddr) {
             poll.pollType = PollType.METERED;
         } else if (poll.addressList[0] != defAddr) {
@@ -282,29 +293,10 @@ contract Voting {
             poll.pollType = PollType.PUBLIC;
         }
 
-        pollsMap[poll.pollId] = Poll(
-            poll.pollId,
-            poll.pollName,
-            poll.pollDescription,
-            poll.pollType,
-            PollStatus.DRAFT,
-            poll.hostId,
-            poll.walletAddress,
-            poll.addressList,
-            poll.tokenContractAddress,
-            poll.tokenAmount,
-            poll.options
-        );
+        poll.pollStatus = PollStatus.DRAFT
+        pollsMap[poll.pollId] = poll
         polls[_user].push(poll.pollId);
-        demoPolls.push(poll);
-        pollTimesMap[poll.pollId] = PollTime(
-            pollTime.pollId,
-            pollTime.customStartDate,
-            pollTime.customEndDate,
-            pollTime.pollStartDate,
-            pollTime.pollEndDate
-        );
-        demoPollTimes.push(pollTimesMap[poll.pollId]);
+        pollTimesMap[poll.pollId] =pollTime;
         pollIdMap[poll.pollId] = _user;
         emit evCreatePoll(poll.pollId);
         return poll.pollId;
@@ -357,8 +349,6 @@ contract Voting {
     }
 
     event evAddPollOption(bool added);
-
-//WORKING
     function addPollOption(
         Option memory _option,
         bytes32 _hash,
@@ -369,6 +359,7 @@ contract Voting {
         require(pollIdMap[_option.pollId] != address(0), "No Poll Found");
         require(pollIdMap[_option.pollId] == msg.sender, "User Not Authenticated");
         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
+        _option.voteCount = 0;
         _option.optionId = _generateId("oid");
         optionIdMap[_option.pollId].push(_option.optionId);
         optionMap[_option.optionId] = _option;
@@ -440,7 +431,14 @@ contract Voting {
         return false;
     }
 
+    function getUserDetails() public view returns (User[1] memory) {
+        return usersMap[address(msg.sender)];
+    }
+
+    // alternative to cron job, whenever a 'write' transaction occurs relating to a particular poll
+    // this function updates the poll validity, 
     function checkPollValidity (string memory _pid) private returns(bool) {
+        require(pollIdMap[_pid] != address(0x0), "No Poll Found");
         if (pollTimesMap[_pid].customStartDate && pollsMap[_pid].pollStatus == PollStatus.DRAFT) {
             if((pollTimesMap[_pid].pollStartDate/1000) < int(block.timestamp)) {
                 pollsMap[_pid].pollStatus = PollStatus.LIVE;
@@ -456,91 +454,34 @@ contract Voting {
         return true;
     }
 
-    event evModifyPollOption(bool deleted);
-
-
-    
-    function modifyPollOption(
-        string memory _pid,
-        Option memory _option,
-        bytes32 _hash,
-        bytes32 _r,
-        bytes32 _s,
-        uint8 _v
-    ) public returns (bool) {
-        checkPollValidity(_pid);
-        require(pollIdMap[_pid] != address(0), "No Poll Found");
-        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
-        require(optionIdMap[_pid].length != 0, "No options found");
-        require(
-            keccak256(abi.encodePacked((_option.optionName))) !=
-                keccak256(abi.encodePacked("")),
-            "Option does not exists"
-        );
-        require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
-        bytes32 oidHash = keccak256(
-            bytes(optionMap[_option.optionId].optionId)
-        );
-        bytes32 targetHash = keccak256(bytes(_option.optionId));
-        if (oidHash == targetHash) {
-            optionMap[_option.optionId] = _option;
-            emit evModifyPollOption(true);
-            return true;
-        }
-        emit evModifyPollOption(false);
-        return false;
-    }
-
-    // function getca() public view returns (address) {
-    //     return msg.sender;
-    // }
-    function getUserDetails() public view returns (User[1] memory) {
-        return usersMap[address(msg.sender)];
-    }
-
+    // this function compares the epoch timestamp sent by the user against the polltimes struct,
+    // and sends the replica of the Poll with the updated PollStatus. it's an alternate/gimmick version 
+    // of  checkPollValidity() as this doesn't require gas, additionally it makes this dapp unsecure,
+    // if a user sends a timestamp of a future, they can caste a vote, even if the poll is not started
      function getVerifiedPoll(string memory _pid, int _currtime) public returns (Poll memory) {
-        require(pollIdMap[_pid] != address(0), "No Poll Found");
+        require(pollIdMap[_pid] != address(0x0), "No Poll Found");
         require(pollsMap[_pid].pollStatus != PollStatus.CONDUCTED, "Poll Has Ended!");
         require(pollsMap[_pid].pollStatus != PollStatus.DISCARDED, "No Poll Found!");
 
-        PollStatus ps = pollsMap[_pid].pollStatus;
-
-        // NEED TO DIVIDE by 1000 FOR EPOCH SECONDS
+        Poll _tmpPoll = pollsMap[_pid]
+        // if startdate is already passed
         if(pollTimesMap[_pid].customStartDate){
             if(_currtime > (pollTimesMap[_pid].pollStartDate/1000)) {
-                ps = PollStatus.LIVE;
+                _tmpPoll.pollStatus = PollStatus.LIVE;
             }
         }
 
-        // check the poll time -> if it has ended or not
-        // if it is ended and the pollStatus is still in pollstatus that is not PollStatus.CONDUCTED then
-        // change pollsMap[_pid].pollStatus to CONDUCTED
-        // NOT VERIFYING POLL STATUS HERE AS WE ALREADY WROTE DOWN THEM IN REQUIRE()
-
+        // if curent time is greater than end time
         if( pollTimesMap[_pid].customEndDate && ((pollTimesMap[_pid].pollEndDate/1000) < _currtime)) {
-            ps = PollStatus.CONDUCTED;
+            _tmpPoll.pollStatus = PollStatus.CONDUCTED;
         }
-        
-        // ps = PollStatus.LIVE;
-     
-        return Poll(
-            pollsMap[_pid].pollId,
-            pollsMap[_pid].pollName,
-            pollsMap[_pid].pollDescription,
-            pollsMap[_pid].pollType,
-            ps,
-            pollsMap[_pid].hostId,
-            pollsMap[_pid].walletAddress,
-            pollsMap[_pid].addressList,
-            pollsMap[_pid].tokenContractAddress,
-            pollsMap[_pid].tokenAmount,
-            pollsMap[_pid].options
-        );
+        return _tmpPoll.pollStatus;
     }
 
     // using timestamp from the user's side to know the current UTC epoch time
     // block.timestamp returns the timestamp of the most recent block
     function getPollDetails(string memory _pid, int _currtime) public returns (Poll memory) {
+        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         return getVerifiedPoll(_pid, _currtime);
     }
 
@@ -577,6 +518,7 @@ contract Voting {
         uint8 _v
     ) public returns (bool) {
         checkPollValidity(_poll.pollId);
+        require(pollIdMap[_poll.pollId] == msg.sender, "User Not Authenticated");
         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
         if (
             pollsMap[_poll.pollId].pollStatus == PollStatus.DISCARDED ||
@@ -591,7 +533,6 @@ contract Voting {
     }
 
     event evUpdatePollStatus(bool successfull);
-
     function updatePollStatus(
         string memory _pid,
         PollStatus _pollStatus,
@@ -602,6 +543,7 @@ contract Voting {
         uint8 _v
     ) public returns (bool) {
         checkPollValidity(_pid);
+        require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
         if(pollsMap[_pid].pollStatus == PollStatus.DISCARDED) {
             emit evUpdatePollStatus(false);
@@ -612,7 +554,6 @@ contract Voting {
              delete pollTimesMap[_pid];
              pollIdMap[_pid] = address(0x0);
              for (uint8 c = 0; c < polls[msg.sender].length;c++) {
-                
                 if (keccak256(abi.encodePacked(polls[msg.sender][c])) == keccak256(abi.encodePacked(_pid))) {
                     if (c < polls[msg.sender].length) {
                         polls[msg.sender][c] = polls[msg.sender][polls[msg.sender].length-1];
@@ -623,28 +564,9 @@ contract Voting {
         } else {
             pollsMap[_pid].pollStatus = _pollStatus;
         }
-        
         emit evUpdatePollStatus(true);
         return true;
     }
-
-    // event evModifyPollOption2(string deleted);
-
-    //     function checkBal(address _adr) public returns (string memory) {
-    //         address _tokenAddr = _adr;
-    //         IERC20Metadata _token = IERC20Metadata(_tokenAddr);
-    //         bytes memory _lessTknErrMsg = abi.encodePacked(Strings.toString(_token.balanceOf(msg.sender)/(10**_token.decimals())), _token.symbol());
-    //         string memory a = string(_lessTknErrMsg);
-    //         emit evModifyPollOption2(a);
-    //         return a;
-    //     }
-
-    // function getkBal(address  _tkaddr) public view returns (string memory) {
-    //     address _tokenAddr = _tkaddr;
-    //     IERC20 _token = IERC20(_tokenAddr);
-    //     bytes memory _lessTknErrMsg = abi.encodePacked("You have:  $", _token.get());
-    //     return string(_lessTknErrMsg);
-    // }
 
     function getPollTimeDetails(
         string memory _pid
@@ -714,7 +636,7 @@ contract Voting {
             }
             require(_authorized, "User is not authorized to vote");
 
-            if (pollsMap[_pid].pollType == PollType.PRIVATE) {
+            if (pollsMap[_pid].pollType == PollType.METERED) {
                 IERC20Metadata _token = IERC20Metadata(
                     pollsMap[_pid].tokenContractAddress
                 );
@@ -747,7 +669,7 @@ contract Voting {
         require(!_hasUserAlreadyVoted,"You have already casted a vote for this poll");
 
         string memory _vid = _generateId("vid");
-
+        optionMap[_oid].voteCount = (optionMap[_oid].voteCount +1);
         globalVoteMap[_vid] = Vote(_vid, _pid, msg.sender, _oid);
         poll2voteMap[_pid].push(_vid);
         user2voteMap[msg.sender].push(_vid);
@@ -779,517 +701,23 @@ contract Voting {
         return UserVote(_hasUserAlreadyVoted, _vote);
     }
 
+    // gets poll results
+    function getPollResults(string memory _pid,  int _currtime) public returns(Option[] memory) {
+        require(pollIdMap[_pid] != address(0), "No Poll Found");      
+        Poll memory _poll = getVerifiedPoll(_pid, _currtime);
+        require(_poll.pollStatus == PollStatus.LIVE, "Poll has not begun yet");
+        Option[] memory _options = new Option[]( pollsMap[_pid].options.length);
+        for(uint256 indx = 0; indx < pollsMap[_pid].options.length; indx++) {
+            _options[indx] = optionMap[ pollsMap[_pid].options[indx]];
+        }
+        return _options;
+    }
 }
-// pragma solidity ^0.8.0;
 
-// import "./IERC20.sol";
-
-// contract Voting {
-//     struct UserId {
-//         string hostId;
-//         string voterId;
-//         bool found;
-//     }
-
-//     struct Vote {
-//         string voteId;
-//         string pollId;
-//         address userId;
-//         string optionId;
-//     }
-
-//     // vid => Vote {}
-//     mapping(string => Vote) public globalVoteMap;
-//     // pollId -> string[vid]
-//     mapping(string => string[]) public poll2voteMap;
-//     // userId -> string[vid]
-//     mapping(address => string[]) public user2voteMap;
-
-//     struct Option {
-//         string optionId; // opt prefix with random string
-//         string optionName; // gifu
-//         bool isUser; // gifu get it from user andif user
-//         address optionAddress; // gifu if user is true thn ; default 0x000 | walletAdress of the Candidate
-//         string imageUrl; // gifu if true store the url else store "N/A"
-//         uint stakeAmount; // gifu and if poll type is metered else 0.0
-//         address tokenAddress; // gifu and if poll type is metered else 0x0000
-//         uint votePrice; // 1 vote will cost 5 rights??
-//         string optionMessage; // gifu just for bystand; the political party's message
-//         string hostId; // the hostId of the poll Host
-//     }
-
-//     struct User {
-//         address walletAddress;
-//         string hostId;
-//         string voterId;
-//         string[] pollId;
-//         string[] votes;
-//     }
-
-//     enum PollType {
-//         PUBLIC,
-//         PRIVATE,
-//         METERED
-//     }
-
-//     // PollType public pollType;
-
-//     enum PollStatus {
-//         DRAFT,
-//         LIVE,
-//         CONDUCTED,
-//         DISCARDED
-//     }
-
-//     struct Poll {
-//         string pollId;
-//         string pollName;
-//         string pollDescription;
-//         PollType pollType;
-//         PollStatus pollStatus;
-//         string hostId;
-//         address walletAddress;
-//         address[] addressList;
-//         address tokenContractAddress;
-//         uint tokenAmount;
-//         string[] options;
-//     }
-
-//     struct PollTime {
-//         string pollId;
-//         bool customStartDate;
-//         bool customEndDate;
-//         int pollStartDate;
-//         int pollEndDate;
-//     }
-
-//     User[] users;
-//     Poll[] demoPolls;
-//     PollTime[] demoPollTimes;
-//     // Rights[] rights;
-//     // Option[] options;
-//     mapping(address => User[1]) public usersMap;
-//     mapping(string => address) public hostIdMap;
-//     mapping(string => address) public voterIdMap;
-
-//     // pollId to Poll
-//     mapping(string => Poll) public pollsMap;
-//     // host account address => list of polls created by host
-//     mapping(address => string[]) public polls;
-//     // poll id => host's account address
-//     mapping(string => address) public pollIdMap;
-//     // user => fetch the schedule for the poll
-//     mapping(string => PollTime) public pollTimesMap;
-//     // poll id => options Ids for the poll
-//     mapping(string => string[]) public optionIdMap;
-//     // option id (oid) => Option
-//     mapping(string => Option) public  optionMap;
-//     // debug vars start
-//     // debug vars end
-
-//     // utils variables start
-//     uint counter = 1;
-
-//     //utils variables end
-
-//     function findIdByAddress(
-//         address _user
-//     ) public view returns (UserId memory) {
-//         for (uint8 i = 0; i < users.length; i++) {
-//             if (users[i].walletAddress == _user) {
-//                 return UserId(users[i].hostId, users[i].voterId, true);
-//             }
-//         }
-//         return UserId("null", "null", false);
-//     }
-
-//     function _checkUsersExistence(address _user) public view returns (bool) {
-//         for (uint8 i = 0; i < users.length; i++) {
-//             if (users[i].walletAddress == _user) {
-//                 return true;
-//             }
-//         }
-//         return false;
-//     }
-
-//     function _getSlice(
-//         uint256 begin,
-//         uint256 end,
-//         string memory text
-//     ) public pure returns (string memory) {
-//         bytes memory a = new bytes(end - begin + 1);
-//         for (uint i = 0; i <= end - begin; i++) {
-//             a[i] = bytes(text)[i + begin - 1];
-//         }
-//         return string(a);
-//     }
-
-//     function _validatePollId(string memory _pid) internal view returns (bool) {
-//         if (
-//             keccak256(bytes(this._getSlice(0, 2, _pid))) ==
-//             keccak256(bytes("pid"))
-//         ) {
-//             return true;
-//         }
-//         return false;
-//     }
-
-//     function _validateUserId(string memory _uid) internal view returns (bool) {
-//         if (
-//             keccak256(bytes(this._getSlice(0, 2, _uid))) ==
-//             keccak256(bytes("hst"))
-//         ) {
-//             return true;
-//         }
-//         return false;
-//     }
-
-//     function _verifySIG(
-//         address _user,
-//         bytes32 _hash,
-//         bytes32 _r,
-//         bytes32 _s,
-//         uint8 _v
-//     ) private pure returns (bool) {
-//         return
-//             bool(
-//                 ecrecover(
-//                     keccak256(
-//                         abi.encodePacked(
-//                             "\x19Ethereum Signed Message:\n32",
-//                             _hash
-//                         )
-//                     ),
-//                     _v,
-//                     _r,
-//                     _s
-//                 ) == _user
-//             );
-//     }
-
-//     function _validateVoterId(string memory _vid) internal view returns (bool) {
-//         if (
-//             keccak256(bytes(this._getSlice(0, 2, _vid))) ==
-//             keccak256(bytes("vtr"))
-//         ) {
-//             return true;
-//         }
-//         return false;
-//     }
-
-//     function _random(uint number) public returns (uint) {
-//         counter++;
-//         return
-//             uint(
-//                 keccak256(
-//                     abi.encodePacked(
-//                         block.timestamp,
-//                         block.prevrandao,
-//                         msg.sender,
-//                         counter
-//                     )
-//                 )
-//             ) % number;
-//     }
-
-//     function _randomString(uint size) public returns (string memory) {
-//         bytes memory randomWord = new bytes(size);
-//         // since we have 26 letters
-//         bytes memory chars = new bytes(36);
-//         chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-//         for (uint i = 0; i < size; i++) {
-//             uint randomNumber = _random(36);
-//             randomWord[i] = chars[randomNumber];
-//         }
-//         return string(randomWord);
-//     }
-
-//     function _generateId(string memory _prefix) public returns (string memory) {
-//         return string(abi.encodePacked(_prefix, _randomString(13)));
-//     }
-
-//     function _createUser(address _user) public returns (bool) {
-//         string memory _hostId = _generateId("hst");
-//         string memory _voterId = _generateId("vtr");
-//         string[] memory placeholderArr;
-//         hostIdMap[_hostId] = _user;
-//         voterIdMap[_voterId] = _user;
-//         users.push(
-//             User(_user, _hostId, _voterId, placeholderArr, placeholderArr)
-//         );
-//         usersMap[_user][0] = User(
-//             _user,
-//             _hostId,
-//             _voterId,
-//             placeholderArr,
-//             placeholderArr
-//         );
-//         return true;
-//     }
-
-//     // function createPoll(string memory _pollName, string memory _pollDescription,string memory _pollType, address _tokenAddr, uint _tokenAmount, bool _customStartDate, bool _customEndDate, uint _pollStartDate, uint _pollEndDate, address _user, uint _nonce, uint8 _v, bytes32 _r, bytes32 _s) public returns(bool) {
-//     event evCreatePoll(string _pollId);
-
-//     function createPoll(
-//         Poll memory poll,
-//         PollTime memory pollTime,
-//         address _user,
-//         uint _nonce,
-//         bytes32 _hash,
-//         bytes memory _signature,
-//         bytes32 _r,
-//         bytes32 _s,
-//         uint8 _v
-//     ) public payable returns (string memory) {
-//         if (!_checkUsersExistence(_user)) {
-//             _createUser(_user);
-//         }
-//         require(_checkUsersExistence(_user), "User does not exist");
-//         require(_verifySIG(_user, _hash, _r, _s, _v), "Invalid Signature");
-//         poll.pollId = _generateId("pid");
-//         pollTime.pollId = poll.pollId;
-//         poll.hostId = findIdByAddress(_user).hostId;
-//         string[] memory option;
-//         poll.options = option;
-//         address defAddr = 0x0000000000000000000000000000000000000000;
-//         if (poll.tokenAmount != 0 && poll.tokenContractAddress != defAddr) {
-//             poll.pollType = PollType.METERED;
-//         } else if (poll.addressList[0] != defAddr) {
-//             poll.pollType = PollType.PRIVATE;
-//         } else {
-//             poll.pollType = PollType.PUBLIC;
-//         }
-//         pollsMap[poll.pollId] = Poll(
-//             poll.pollId,
-//             poll.pollName,
-//             poll.pollDescription,
-//             poll.pollType,
-//             PollStatus.DRAFT,
-//             poll.hostId,
-//             poll.walletAddress,
-//             poll.addressList,
-//             poll.tokenContractAddress,
-//             poll.tokenAmount,
-//             poll.options
-//         );
-//         polls[_user].push(poll.pollId);
-//         demoPolls.push(poll);
-//         pollTimesMap[poll.pollId] = PollTime(
-//             pollTime.pollId,
-//             pollTime.customStartDate,
-//             pollTime.customEndDate,
-//             pollTime.pollStartDate,
-//             pollTime.pollEndDate
-//         );
-//         demoPollTimes.push(pollTimesMap[poll.pollId]);
-//         pollIdMap[poll.pollId] = _user;
-//         emit evCreatePoll(poll.pollId);
-//         return poll.pollId;
-//     }
-
-//     function getPollsFromUser(
-//         address _user
-//     ) public view returns (Poll[] memory) {
-//         uint arrlen = polls[_user].length;
-//         Poll[] memory _pollList = new Poll[](arrlen);
-//         for (uint8 i = 0; i < polls[_user].length; i++) {
-//             _pollList[i] = pollsMap[polls[_user][i]];
-//         }
-//         return _pollList;
-//     }
-
-//     function getPollTimesFromUser(
-//         address _user
-//     ) public view returns (PollTime[] memory) {
-//         uint arrlen = polls[_user].length;
-//         PollTime[] memory _pollTimeList = new PollTime[](arrlen);
-//         for (uint8 i = 0; i < polls[_user].length; i++) {
-//             _pollTimeList[i] = pollTimesMap[polls[_user][i]];
-//         }
-//         return _pollTimeList;
-//     }
-
-//     // no need for event emitter as we only are only reading
-//     function fetchPollOptions(
-//         string memory _pid
-//     ) public view returns (Option[] memory) {
-//         require(pollIdMap[_pid] != address(0), "No Poll Found");
-//         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
-//         uint arrlen = optionIdMap[_pid].length;
-//         Option[] memory _optionList = new Option[](arrlen);
-//         for (uint8 i = 0; i < optionIdMap[_pid].length; i++) {
-//             _optionList[i] = optionMap[optionIdMap[_pid][i]];
-//         }
-//         return _optionList;
-//     }
-
-//     event evAddPollOption(bool added);
-
-//     function addPollOption(
-//         string memory _pid,
-//         Option memory _option,
-//         bytes32 _hash,
-//         bytes32 _r,
-//         bytes32 _s,
-//         uint8 _v
-//     ) public returns (bool) {
-//         require(pollIdMap[_pid] != address(0), "No Poll Found");
-//         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
-//         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
-//         _option.optionId = _generateId("oid");
-
-//         optionIdMap[_pid].push(_option.optionId);
-//         optionMap[_option.optionId] = _option;
-//         emit evAddPollOption(true);
-//         return true;
-//     }
-
-//     event evRemovePollOptions(bool deleted);
-
-//     function removePollOptions(
-//         string memory _pid,
-//         string memory _oid,
-//         bytes32 _hash,
-//         bytes32 _r,
-//         bytes32 _s,
-//         uint8 _v
-//     ) public returns (bool) {
-//         require(pollIdMap[_pid] != address(0), "No Poll Found");
-//         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
-//         require(optionIdMap[_pid].length != 0, "No options found");
-//         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
-//         require(keccak256(abi.encodePacked((optionMap[_oid].optionName))) != keccak256(abi.encodePacked("")), "Option does not exists");
-//         bytes32 oidHash = keccak256(bytes(optionMap[_oid].optionId));
-//         bytes32 targetHash = keccak256(bytes(_oid));
-//         if (oidHash == targetHash) {
-//             delete optionMap[_oid];
-//             for (uint8 i = 0; i < optionIdMap[_pid].length; i++) {
-//                 if (keccak256(abi.encodePacked(optionIdMap[_pid][i])) == keccak256(abi.encodePacked(_oid))) {
-//                     delete optionIdMap[_pid][i];
-//                 }
-//             }
-//             emit evRemovePollOptions(true);
-//             return true;
-//         }
-//         emit evRemovePollOptions(false);
-//         return false;
-//     }
-
-//     event evModifyPollOption(bool deleted);
-
-//     function modifyPollOption(
-//         string memory _pid,
-//         Option memory _option,
-//         bytes32 _hash,
-//         bytes32 _r,
-//         bytes32 _s,
-//         uint8 _v
-//     ) public returns (bool) {
-//         require(pollIdMap[_pid] != address(0), "No Poll Found");
-//         require(pollIdMap[_pid] == msg.sender, "User Not Authenticated");
-//         require(optionIdMap[_pid].length != 0, "No options found");
-//         require(keccak256(abi.encodePacked((_option.optionName))) != keccak256(abi.encodePacked("")), "Option does not exists");
-//         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
-//         bytes32 oidHash = keccak256(bytes(optionMap[_option.optionId].optionId));
-//         bytes32 targetHash = keccak256(bytes(_option.optionId));
-//         if (oidHash == targetHash) {
-//             optionMap[_option.optionId] = _option;
-//             emit evModifyPollOption(true);
-//             return true;
-//         }
-//         emit evModifyPollOption(false);
-//         return false;
-//     }
-
-//     // function getca() public view returns (address) {
-//     //     return msg.sender;
-//     // }
-//     function getUserDetails() public view returns (User[1] memory) {
-//         return usersMap[address(msg.sender)];
-//     }
-
-//     function getPollDetails(
-//         string memory _pid
-//     ) public returns (Poll memory) {
-//         if (pollTimesMap[_pid].customEndDate) {
-//             if(!(int(block.timestamp) < pollTimesMap[_pid].pollEndDate)) {
-//                 if(pollsMap[_pid].pollStatus == PollStatus.LIVE) {
-//                     pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
-//                 }
-//             }
-//         }
-//         return pollsMap[_pid];
-//     }
-
-//     // function checkBal() public view returns (string memory) {
-//     //     address _tokenAddr = 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0;
-//     //     IERC20 _token = IERC20(_tokenAddr);
-//     //     bytes memory _lessTknErrMsg = abi.encodePacked("You do not possess enough $", _token.symbol());
-//     //     return string(_lessTknErrMsg);
-//     // }
-
-//     function getPollTimeDetails(
-//         string memory _pid
-//     ) public view returns (PollTime memory) {
-//         return pollTimesMap[_pid];
-//     }
-
-//     event evCastVote(Vote addedVote, address castedBy, bool wasSuccessful);
-//     function castVote(string memory _pid, string memory _oid, bytes32 _hash, bytes32 _r, bytes32 _s, uint8 _v) public returns (bool){
-//         if (!_checkUsersExistence(msg.sender)) {
-//             _createUser(msg.sender);
-//         }
-//         require(_checkUsersExistence(msg.sender), "User does not exist");
-//         require(_verifySIG(msg.sender, _hash, _r, _s, _v), "Invalid Signature");
-//         require(pollIdMap[_pid] != address(0), "No Poll Found");
-//         require(pollsMap[_pid].pollStatus != PollStatus.DISCARDED, "Poll is DELETED");
-//         require(pollsMap[_pid].pollStatus != PollStatus.CONDUCTED, "Poll has ENDED");
-//         require(pollsMap[_pid].pollStatus == PollStatus.LIVE, "Voting has not started for this poll");
-
-//         if (pollTimesMap[_pid].customStartDate) {
-//             require(int(block.timestamp) > pollTimesMap[_pid].pollStartDate, "Poll has not started yet!");
-//         }
-
-//         if (pollTimesMap[_pid].customEndDate) {
-//             if(!(int(block.timestamp) < pollTimesMap[_pid].pollEndDate)) {
-//                 if(pollsMap[_pid].pollStatus == PollStatus.LIVE) {
-//                     pollsMap[_pid].pollStatus = PollStatus.CONDUCTED;
-//                 }
-//             }
-//             require(int(block.timestamp) < pollTimesMap[_pid].pollEndDate, "Poll has ended");
-//         }
-
-//         if (pollsMap[_pid].pollType == PollType.PRIVATE || pollsMap[_pid].pollType == PollType.METERED) {
-//             bool _authorized = false;
-//             for (uint8 i = 0; i < pollsMap[_pid].addressList.length; i++) {
-//                 if( pollsMap[_pid].addressList[i] == msg.sender ) {
-//                     _authorized = true;
-//                     break;
-//                 }
-//             }
-//             require(_authorized, "User is not authorized to vote");
-
-//             if (pollsMap[_pid].pollType == PollType.METERED) {
-//                 IERC20 _token = IERC20(pollsMap[_pid].tokenContractAddress);
-//                 bytes memory _lessTknErrMsg = abi.encodePacked("You do not possess enough $", _token.symbol());
-//                 require((_token.balanceOf(msg.sender) / (1 ether)) >= pollsMap[_pid].tokenAmount, string(_lessTknErrMsg));
-//             }
-//         }
-
-//         bool _hasUserAlreadyVoted = false;
-//         for (uint8 i = 0; i < user2voteMap[msg.sender].length; i++){
-//             if(keccak256(abi.encodePacked(globalVoteMap[user2voteMap[msg.sender][i]].pollId)) == keccak256(abi.encodePacked(_pid))) {
-//                 _hasUserAlreadyVoted = true;
-//                 break;
-//             }
-//         }
-//         require(!_hasUserAlreadyVoted, "You have already casted a vote for this poll");
-//         string memory _vid = _generateId("vid");
-
-//         globalVoteMap[_vid] = Vote(_vid, _pid, msg.sender, _oid);
-//         poll2voteMap[_pid].push(_vid);
-//         user2voteMap[msg.sender].push(_vid);
-//         emit evCastVote(globalVoteMap[_vid], msg.sender, true);
-//         return true;
-//     }
-// }
+// notes from the author:
+// The main goal of the project was to learn solidity in chaotic way so the result was also chaotic haha
+// And as to celebrate the completition of the MVP (yes MVP!! jk) I shall share one embarassing moment of the journey
+// I spent 3 days scratching my head because I couldn't make a "write" transaction work in react but it was working with remix ,
+//      later I discovered the gas popup was also not poping up, after some digging i found out I need to use .send()
+//      method of web3js instead of call to make writable transactions. 
+// see I was noob then, I still am but noob pro plus ultra max.

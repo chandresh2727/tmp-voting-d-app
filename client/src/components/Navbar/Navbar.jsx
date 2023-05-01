@@ -29,11 +29,7 @@ export const Navbar = () => {
 		const fetchUserDetails = async () => {
 			return await contract?.methods.getUserDetails().call({ from: accounts[0] });
 		};
-		console.log(accounts)
-		console.log('contract!!!!!!!!!!!!!!!!', contract?.methods)
-		// console.log()
 		fetchUserDetails().then((details) => {
-			console.log(details)
 			details = details[0]
 			if (details.walletAddress === "0x0000000000000000000000000000000000000000") {
 				setHostid("hstxxxxxxxxxxxxx")
@@ -44,7 +40,6 @@ export const Navbar = () => {
 			}
 		})
 	}, [accounts, contract, location]);
-	// console.log(ab().then((d) => console.log(d)))
 
 	return (
 		<div className="Navbar">

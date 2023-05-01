@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { getUrlVars } from "../../Handlers/utils";
-import Alert from "react-bootstrap/Alert";
 import "./Home.css";
-import { useNavigate, createSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
@@ -30,12 +29,9 @@ export const Home = () => {
 				.call({ from: accounts[0] });
 		};
 		fetchUserPolls().then((results) => {
-			console.log(results);
 			setPolls({ fetched: true, data: results });
 		});
 	}, [accounts, contract]);
-
-	console.log(polls);
 
 	return (
 		<div className="Home artificialContainer">

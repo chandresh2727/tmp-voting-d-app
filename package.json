@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "eth-sig-util": "^3.0.1",
-    "ethereumjs-util": "^7.1.5",
-    "ethers": "^6.2.0",
-    "http": "^0.0.1-security",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.2/xlsx-0.19.2.tgz"
-  }
-}

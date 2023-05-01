@@ -8,7 +8,6 @@ import {IoMdArrowRoundBack, IoMdTrash} from 'react-icons/io'
 import './ViewOption.css'
 
 export const ViewOption = () => {
-	const web3 = new Web3(Web3.givenProvider || "ws://localhost:7545");
 	const navigate = useNavigate();
 	const {
 		state: { accounts, contract },
@@ -31,7 +30,6 @@ export const ViewOption = () => {
             console.log("----ManagePoll.jsx----", emsg);
             navigate("/?error=1&msg=" + emsg);
         } else {
-            // alert("unknown error occured");
             console.log("addoptionjsx ->getpolldetails().catch()");
             throw new Error(e);
         }

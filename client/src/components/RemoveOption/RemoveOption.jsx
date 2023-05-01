@@ -1,7 +1,6 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import useEth from "../../contexts/EthContext/useEth";
 import Web3 from "web3";
-// import Form from "react-bootstrap/Form";
 import { getUrlVars, getRPCErrorMessage } from "../../Handlers/utils";
 import { useNavigate } from "react-router-dom";
 import "./RemoveOption.css";
@@ -33,7 +32,6 @@ export const RemoveOption = () => {
 		},
 		[navigate]
 	)
-    let [done, setDone] = useState(0)
     let [clicked, setClicked] = useState(false)
     const performDeletion = async () => {
         const gasFee = async (hash,r,s,v) => {
@@ -52,7 +50,6 @@ export const RemoveOption = () => {
                 console.log(e);
                 MetamaskErrorHandler(e);
             });
-            console.log(value, "jnfcawjenajnew")
             let a = await value.events["evRemovePollOptions"].returnValues["deleted"];
             if (a) {
                 return navigate(
@@ -90,10 +87,6 @@ export const RemoveOption = () => {
 			let r = signature.slice(0, 66);
 			let s = "0x" + signature.slice(66, 130);
 			let v = parseInt(signature.slice(130, 132), 16);
-			// console.log(poll);
-			console.log("signature" + signature);
-			console.log("hash" + hash);
-			console.log(`r = ${r} | s = ${s} | v = ${v}`);
             console.log(gasFee(hash,r,s,v))
         }
         executeRemoval()

@@ -47,9 +47,9 @@ setTimeout(() => {
       })
 },500)}/>
 or
-<FiShare2 className='shareBtnIcon' onClick={() =>  navigator.share({
+<FiShare2 className='shareBtnIcon' onClick={async () =>await  navigator.share({
     title: props.pollName,
-    text: 'Caste Your Vote! ' + props.pollDescription,
+    text: '*Caste Your Vote!* \n\n' + props.pollDescription,
     url: `${window.location.origin}/vote?pid=${getUrlVars()['pid']}`,
   })}/>
     </span>)
