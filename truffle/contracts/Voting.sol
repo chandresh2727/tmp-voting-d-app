@@ -293,8 +293,8 @@ contract Voting {
             poll.pollType = PollType.PUBLIC;
         }
 
-        poll.pollStatus = PollStatus.DRAFT
-        pollsMap[poll.pollId] = poll
+        poll.pollStatus = PollStatus.DRAFT;
+        pollsMap[poll.pollId] = poll;
         polls[_user].push(poll.pollId);
         pollTimesMap[poll.pollId] =pollTime;
         pollIdMap[poll.pollId] = _user;
@@ -463,7 +463,7 @@ contract Voting {
         require(pollsMap[_pid].pollStatus != PollStatus.CONDUCTED, "Poll Has Ended!");
         require(pollsMap[_pid].pollStatus != PollStatus.DISCARDED, "No Poll Found!");
 
-        Poll _tmpPoll = pollsMap[_pid]
+        Poll memory _tmpPoll = pollsMap[_pid];
         // if startdate is already passed
         if(pollTimesMap[_pid].customStartDate){
             if(_currtime > (pollTimesMap[_pid].pollStartDate/1000)) {
@@ -475,7 +475,7 @@ contract Voting {
         if( pollTimesMap[_pid].customEndDate && ((pollTimesMap[_pid].pollEndDate/1000) < _currtime)) {
             _tmpPoll.pollStatus = PollStatus.CONDUCTED;
         }
-        return _tmpPoll.pollStatus;
+        return _tmpPoll;
     }
 
     // using timestamp from the user's side to know the current UTC epoch time
