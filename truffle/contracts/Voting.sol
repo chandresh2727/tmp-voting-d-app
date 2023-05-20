@@ -458,7 +458,7 @@ contract Voting {
     // and sends the replica of the Poll with the updated PollStatus. it's an alternate/gimmick version 
     // of  checkPollValidity() as this doesn't require gas, additionally it makes this dapp unsecure,
     // if a user sends a timestamp of a future, they can caste a vote, even if the poll is not started
-     function getVerifiedPoll(string memory _pid, int _currtime) public returns (Poll memory) {
+     function getVerifiedPoll(string memory _pid, int _currtime) public view returns (Poll memory) {
         require(pollIdMap[_pid] != address(0x0), "No Poll Found");
         require(pollsMap[_pid].pollStatus != PollStatus.CONDUCTED, "Poll Has Ended!");
         require(pollsMap[_pid].pollStatus != PollStatus.DISCARDED, "No Poll Found!");
